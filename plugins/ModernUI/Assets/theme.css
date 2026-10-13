@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Modern Executive UI - Phase 1: Foundation & Design Tokens
+   پالت رنگی استاندارد روز دنیا بر پایه طراحی‌های Linear و Tailwind Slate
+   ========================================================================== */
+
+/* ۱. ایمپورت فونت‌های باکیفیت وزیرمتن برای فارسی و اینتر برای انگلیسی */
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    /* تایپوگرافی */
+    --ui-font-family: 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    /* پالت رنگی مدرن (Slate + Modern Indigo) */
+    --bg-app: #f8fafc;              /* رنگ پس‌زمینه کلی نرم و بدون خستگی چشم */
+    --bg-surface: #ffffff;          /* رنگ سطوح و کارت‌ها */
+    --bg-column: #f1f5f9;           /* رنگ پس‌زمینه ستون‌های کانبان */
+    --bg-column-header: #e2e8f0;    /* سرستون */
+
+    /* رنگ‌های اصلی و تاکید (Primary Brand) */
+    --primary-color: #4f46e5;       /* ایندیگو لوکس */
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+
+    /* رنگ‌های وضعیت (Status Colors) */
+    --success: #10b981;             /* سبز زمردی مدرن */
+    --warning: #f59e0b;             /* کهربایی */
+    --danger: #ef4444;              /* رز قرمز ارگونومیک */
+    --info: #0ea5e9;                /* آبی آسمانی */
+
+    /* متن‌ها و کنتراست */
+    --text-main: #0f172a;           /* مشکی تیره و خوانا */
+    --text-muted: #64748b;          /* خاکستری محو برای اطلاعات فرعی */
+    --text-light: #94a3b8;
+
+    /* خطوط مرزی و سایه‌ها (Shadows & Borders) */
+    --border-subtle: #e2e8f0;
+    --border-focus: #818cf8;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+}
+
+/* اعمال پایه‌ای به کل نرم‌افزار */
+body {
+    background-color: var(--bg-app) !important;
+    font-family: var(--ui-font-family) !important;
+    color: var(--text-main) !important;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+}
+
+/* اسکرول‌بار ظریف و مدرن */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

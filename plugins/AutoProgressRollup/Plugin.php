@@ -3,18 +3,23 @@
 namespace Kanboard\Plugin\AutoProgressRollup;
 
 use Kanboard\Core\Plugin\Base;
-use Kanboard\Model\TaskLinkModel;
 
 class Plugin extends Base
 {
+    // متغیر کمکی برای جلوگیری از حلقه تکرار بی‌نهایت (Infinite Loop Prevention)
+    private static $isProcessing = false;
+
     public function initialize()
     {
-        // رویداد: هنگام ویرایش یا بروزرسانی تسک
+        // گوش دادن به رویداد ویرایش و آپدیت تسک
         $this->container['dispatcher']->addListener('task.update', function ($event) {
-            $this->recalculateParentProgress($event['task_id']);
+            $taskId = isset($event['task_id']) ? $event['task_id'] : (isset($event['id']) ? $event['id'] : null);
+            if ($taskId) {
+                $this->recalculateParentProgress($taskId);
+            }
         });
 
-        // رویداد: هنگام ثبت زمان یا ویرایش آن در تسک
+        // گوش دادن به رویداد ثبت یا آپدیت زمان در ساب‌تسک‌ها
         $this->container['dispatcher']->addListener('subtask.time_tracking.update', function ($event) {
             if (isset($event['task_id'])) {
                 $this->recalculateParentProgress($event['task_id']);
@@ -24,23 +29,31 @@ class Plugin extends Base
 
     private function recalculateParentProgress($taskId)
     {
-        // پیدا کردن لینک‌های ارتباطی این تسک
-        $links = $this->taskLinkModel->getAllGroupedByLink($taskId);
+        // اگر سیستم در حال آپدیت تسک والد بود، متوقف شو تا در لوپ نیفتد
+        if (self::$isProcessing) {
+            return;
+        }
 
-        // بررسی اینکه آیا این تسک فرزندی برای یک والد است (رابطه "is a child of")
-        if (!empty($links) && isset($links['is a child of'])) {
-            foreach ($links['is a child of'] as $parentRelation) {
-                $parentId = $parentRelation['task_id'];
+        // متد رسمی و استاندارد کان‌بورد برای خواندن لینک‌ها
+        $links = $this->taskLinkModel->getAll($taskId);
+        if (empty($links)) {
+            return;
+        }
 
-                // پیدا کردن تمام فرزندان این والد
-                $parentLinks = $this->taskLinkModel->getAllGroupedByLink($parentId);
-                
+        foreach ($links as $link) {
+            // بررسی این‌که آیا این تسک فرزند یک والد است (is a child of)
+            if (isset($link['label']) && strtolower($link['label']) === 'is a child of') {
+                $parentId = $link['task_id'];
+
+                // پیدا کردن تمامی لینک‌های متصل به تسک والد
+                $parentLinks = $this->taskLinkModel->getAll($parentId);
                 $totalEstimated = 0;
                 $totalSpent = 0;
 
-                if (isset($parentLinks['is a parent of'])) {
-                    foreach ($parentLinks['is a parent of'] as $childRelation) {
-                        $childTask = $this->taskFinderModel->getById($childRelation['task_id']);
+                foreach ($parentLinks as $pLink) {
+                    // جمع زدن ساعت‌های همه تسک‌هایی که فرزند این والد هستند
+                    if (isset($pLink['label']) && strtolower($pLink['label']) === 'is a parent of') {
+                        $childTask = $this->taskFinderModel->getById($pLink['task_id']);
                         if ($childTask) {
                             $totalEstimated += floatval($childTask['time_estimated']);
                             $totalSpent += floatval($childTask['time_spent']);
@@ -48,12 +61,18 @@ class Plugin extends Base
                     }
                 }
 
-                // بروزرسانی زمان‌های تخمینی و صرف‌شده در تسک والد
+                // فعال کردن قفل برای جلوگیری از اجرای مجدد رویداد
+                self::$isProcessing = true;
+
+                // ذخیره مجموع زمان‌ها روی تسک والد (Parent)
                 $this->taskModificationModel->update([
                     'id' => $parentId,
                     'time_estimated' => $totalEstimated,
                     'time_spent' => $totalSpent,
                 ]);
+
+                // آزاد کردن قفل
+                self::$isProcessing = false;
             }
         }
     }
@@ -75,7 +94,7 @@ class Plugin extends Base
 
     public function getPluginVersion()
     {
-        return '1.0.0';
+        return '1.0.1';
     }
 
     public function getPluginHomepage()
