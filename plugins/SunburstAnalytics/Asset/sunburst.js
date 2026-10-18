@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
         labels: chartData.labels,
         parents: chartData.parents,
         values: chartData.values,
+        branchvalues: "remainder",
         customdata: chartData.customData,
         hovertext: chartData.hoverTexts,
         hoverinfo: "text",

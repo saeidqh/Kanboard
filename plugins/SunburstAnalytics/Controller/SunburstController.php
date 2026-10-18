@@ -7,16 +7,13 @@ use Kanboard\Controller\BaseController;
 /**
  * Class SunburstController
  * 
- * پردازشگر اختصاصی ساختار درختی نمودار خورشیدی پروژه اهواز 005
+ * کنترلر نمودار خورشیدی (توزیع تسک‌ها و پیشرفت پروژه اهواز 005)
  */
 class SunburstController extends BaseController
 {
     public function show()
     {
         $project = $this->getProject();
-
-        // واکشی ستون‌های استاندارد برای آگاهی از وضعیت‌ها
-        $columns = $this->columnModel->getList($project['id']);
 
         // واکشی تسک‌های فعال و غیرفعال پروژه به همراه نام ستون و کاربر
         $tasks = $this->db->table('tasks')
@@ -27,8 +24,6 @@ class SunburstController extends BaseController
                 'tasks.column_id',
                 'tasks.is_active',
                 'tasks.score',
-                'tasks.time_estimated',
-                'tasks.time_spent',
                 'users.name as owner_name',
                 'users.username as owner_username',
                 'columns.title as column_title'
@@ -55,7 +50,7 @@ class SunburstController extends BaseController
             }
         }
 
-        // نقشه پالت رنگی استاندارد وضعیت‌ها
+        // پالت رنگی استاندارد ستون‌ها
         $statusColors = [
             'backlog' => '#7f8c8d',      // خاکستری
             'ready'   => '#2980b9',      // آبی
@@ -65,12 +60,11 @@ class SunburstController extends BaseController
             'default' => '#34495e'       // سرمه‌ای
         ];
 
-        // آمار کلی پروژه
         $totalProjectTasks = count($tasks);
         $projectOpenTasks = 0;
         $projectClosedTasks = 0;
 
-        // ساختاربندی سلسله‌مراتبی داده‌ها
+        // گروه‌بندی داده‌ها بر اساس کاربر و ستون
         $usersMap = [];
         foreach ($tasks as $task) {
             $isOpen = ($task['is_active'] == 1);
@@ -110,26 +104,24 @@ class SunburstController extends BaseController
             $usersMap[$uId]['columns'][$cId]['tasks'][] = $task;
         }
 
-        // محاسبه درصد پیشرفت کلی پروژه
         $projectProgress = $totalProjectTasks > 0 ? round(($projectClosedTasks / $totalProjectTasks) * 100) : 0;
         $projectCenterColor = $projectProgress >= 70 ? '#27ae60' : ($projectProgress >= 40 ? '#e67e22' : '#c0392b');
 
-        // آرایه‌های ورودی پلات‌لی (Plotly Arrays)
+        // ساخت آرایه‌های پلات‌لی (با وزن‌دهی صفر برای والدین تا نمودار خودکار ۳۶۰ درجه پر شود)
         $ids = ['root'];
         $labels = [$project['name']];
         $parents = [''];
-        $values = [max(1, $totalProjectTasks)];
+        $values = [0]; // ریشه وزن صفر دارد تا فرزندان کل ۳۶۰ درجه را تقسیم کنند
         $colors = [$projectCenterColor];
         $hoverTexts = [
             "<b>پروژه: " . htmlspecialchars($project['name']) . "</b><br>" .
             "کل کارها: {$totalProjectTasks}<br>" .
-            "کارهای باز (فعال): {$projectOpenTasks}<br>" .
-            "کارهای بسته (انجام‌شده): {$projectClosedTasks}<br>" .
+            "کارهای باز: {$projectOpenTasks}<br>" .
+            "کارهای بسته: {$projectClosedTasks}<br>" .
             "پیشرفت کل: {$projectProgress}%"
         ];
         $customData = [0];
 
-        // ساخت گره‌های کاربران، ستون‌ها و تسک‌ها
         foreach ($usersMap as $uId => $uData) {
             $userNodeId = "user_" . $uId;
             $userTotal = $uData['total_open'] + $uData['total_closed'];
@@ -137,21 +129,19 @@ class SunburstController extends BaseController
             $ids[] = $userNodeId;
             $labels[] = $uData['name'];
             $parents[] = 'root';
-            $values[] = max(1, $userTotal);
-            $colors[] = '#1abc9c'; // رنگ فیروزه‌ای تمیز برای حلقه کاربران
+            $values[] = 0; // کاربر وزن صفر دارد تا ستون‌ها فضا را پر کنند
+            $colors[] = '#1abc9c';
             $hoverTexts[] = "<b>کارشناس: {$uData['name']}</b><br>" .
                             "کل کارها: {$userTotal}<br>" .
                             "📌 کارهای باز: {$uData['total_open']}<br>" .
                             "✅ کارهای تکمیل: {$uData['total_closed']}";
             $customData[] = 0;
 
-            // گره‌های ستون‌های مربوط به این کاربر
             foreach ($uData['columns'] as $cId => $cData) {
                 $columnNodeId = "user_{$uId}_col_{$cId}";
                 $colTaskCount = count($cData['tasks']);
                 $cTitleLower = strtolower(trim($cData['title']));
 
-                // تطبیق رنگ ستون
                 $colColor = $statusColors['default'];
                 foreach ($statusColors as $key => $hex) {
                     if (strpos($cTitleLower, $key) !== false) {
@@ -163,27 +153,24 @@ class SunburstController extends BaseController
                 $ids[] = $columnNodeId;
                 $labels[] = $cData['title'] . " ({$colTaskCount})";
                 $parents[] = $userNodeId;
-                $values[] = max(1, $colTaskCount);
+                $values[] = 0; // ستون وزن صفر دارد تا تسک‌ها فضا را پر کنند
                 $colors[] = $colColor;
                 $hoverTexts[] = "<b>ستون: {$cData['title']}</b><br>" .
                                 "مسئول: {$uData['name']}<br>" .
-                                "تعداد کار در این ستون: {$colTaskCount}";
+                                "تعداد کار: {$colTaskCount}";
                 $customData[] = 0;
 
-                // گره‌های تسک‌ها (لایه نهایی)
                 foreach ($cData['tasks'] as $task) {
                     $taskNodeId = "task_" . $task['id'];
-                    $tWeight = !empty($task['score']) ? max(1, (int)$task['score']) : 1;
+                    $tWeight = 1; // تسک‌ها وزن ۱ دارند تا ۳۶۰ درجه به تساوی تقسیم شود و سفیدی نماند
 
-                    // وضعیت تکمیل ساب‌تسک‌ها
                     $subStats = isset($subtaskStats[$task['id']]) ? $subtaskStats[$task['id']] : ['total' => 0, 'done' => 0];
                     $subText = $subStats['total'] > 0 ? "ساب‌تسک‌ها: {$subStats['done']} از {$subStats['total']}" : "بدون ساب‌تسک";
 
                     $ids[] = $taskNodeId;
-                    $labels[] = "#" . $task['id'] . " " . mb_strimwidth($task['title'], 0, 20, '...');
+                    $labels[] = "#" . $task['id'] . " " . mb_strimwidth($task['title'], 0, 18, '...');
                     $parents[] = $columnNodeId;
                     $values[] = $tWeight;
-                    // تسک دقیقاً رنگ ستون خود را می‌گیرد تا مدیر سریع تشخیص دهد
                     $colors[] = $colColor;
                     $hoverTexts[] = "<b>تسک #{$task['id']}: " . htmlspecialchars($task['title']) . "</b><br>" .
                                     "ستون: {$cData['title']}<br>" .
