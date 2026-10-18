@@ -3,43 +3,41 @@
 namespace Kanboard\Plugin\SunburstAnalytics;
 
 use Kanboard\Core\Plugin\Base;
-use Kanboard\Core\Translator;
+use Kanboard\Plugin\SunburstAnalytics\Service\WorkloadAnalysisService;
 
 class Plugin extends Base
 {
     public function initialize()
     {
-        // اضافه کردن لینک جدید به منوی سایدبار بخش Analytics
-        $this->template->hook->attach('template:analytic:sidebar', 'SunburstAnalytics:analytic/sidebar');
-    }
+        // رجیستر کردن سرویس به عنوان یک کامپوننت در کانتینر
+        $this->container['workloadAnalysisService'] = function ($c) {
+            return new WorkloadAnalysisService($c);
+        };
 
-    public function onStartup()
-    {
-        Translator::load($this->languageModel->getCurrentLanguage(), __DIR__.'/Locale');
+        // افزودن منوی سمت چپ به صفحه Analytics
+        $this->template->hook->attach('template:analytic:sidebar', 'SunburstAnalytics:analytic/sidebar');
+
+        // بارگذاری استایل اختصاصی
+$this->hook->on('template:layout:css', array('template' => 'plugins/SunburstAnalytics/assets/css/sunburst_workload.css'));
     }
 
     public function getPluginName()
     {
-        return 'Sunburst Analytics';
+        return 'SunburstAnalytics';
     }
 
     public function getPluginDescription()
     {
-        return 'Interactive Multi-layer Sunburst Chart for Team Workload & Task Progress';
+        return 'Interactive Sunburst Chart & Workload Delay Monitor';
     }
 
     public function getPluginAuthor()
     {
-        return 'Ahvaz005 Project Team';
+        return 'Saeid Hosseini';
     }
 
     public function getPluginVersion()
     {
-        return '1.0.0';
-    }
-
-    public function getPluginHomepage()
-    {
-        return '';
+        return '1.1.0';
     }
 }

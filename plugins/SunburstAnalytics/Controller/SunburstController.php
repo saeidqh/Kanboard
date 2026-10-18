@@ -4,199 +4,230 @@ namespace Kanboard\Plugin\SunburstAnalytics\Controller;
 
 use Kanboard\Controller\BaseController;
 
-/**
- * Class SunburstController
- * 
- * کنترلر نمودار خورشیدی (توزیع تسک‌ها و پیشرفت پروژه اهواز 005)
- */
 class SunburstController extends BaseController
 {
     public function show()
     {
         $project = $this->getProject();
 
-        // واکشی تسک‌های فعال و غیرفعال پروژه به همراه نام ستون و کاربر
+        // ۱. آماده‌سازی ساختار کامل نمودار خورشیدی
+        $chartData = $this->buildSunburstData($project['id']);
+
+        // ۲. آماده‌سازی داده‌های جدول تحلیل بار کاری از لایه سرویس
+        $workloadService = new \Kanboard\Plugin\SunburstAnalytics\Service\WorkloadAnalysisService($this->container);
+        $workloadData = $workloadService->getProjectWorkloadAnalysis($project['id']);
+
+        $this->response->html($this->helper->layout->analytic('SunburstAnalytics:analytic/show', [
+            'project'      => $project,
+            'title'        => t('Sunburst Chart & Workload Monitoring'),
+            'chartData'    => $chartData,
+            'workloadData' => $workloadData,
+        ]));
+    }
+
+    private function buildSunburstData($projectId)
+    {
+        // دریافت تمام تسک‌های پروژه (فعال و بسته)
         $tasks = $this->db->table('tasks')
-            ->columns(
-                'tasks.id',
-                'tasks.title',
-                'tasks.owner_id',
-                'tasks.column_id',
-                'tasks.is_active',
-                'tasks.score',
-                'users.name as owner_name',
-                'users.username as owner_username',
-                'columns.title as column_title'
-            )
-            ->join('users', 'id', 'owner_id')
-            ->join('columns', 'id', 'column_id')
-            ->eq('tasks.project_id', $project['id'])
+            ->columns('id', 'title', 'owner_id', 'column_id', 'is_active', 'time_estimated', 'time_spent')
+            ->eq('project_id', $projectId)
             ->findAll();
 
-        // واکشی ساب‌تسک‌ها برای سنجش پیشرفت داخلی
-        $allSubtasks = $this->db->table('subtasks')
-            ->columns('task_id', 'status')
-            ->findAll();
+        $columns = $this->columnModel->getList($projectId);
+        $project = $this->projectModel->getById($projectId);
+        $projectName = $project['name'] ?? 'Ahvaz005';
 
-        $subtaskStats = [];
-        foreach ($allSubtasks as $st) {
-            $tid = $st['task_id'];
-            if (!isset($subtaskStats[$tid])) {
-                $subtaskStats[$tid] = ['total' => 0, 'done' => 0];
-            }
-            $subtaskStats[$tid]['total']++;
-            if ($st['status'] == 2) {
-                $subtaskStats[$tid]['done']++;
-            }
+        // دریافت لیست کاربران دارای تسک
+        $usersMap = [];
+        $rawUsers = $this->db->table('users')->columns('id', 'name', 'username')->findAll();
+        foreach ($rawUsers as $u) {
+            $usersMap[$u['id']] = !empty($u['name']) ? $u['name'] : $u['username'];
         }
 
-        // پالت رنگی استاندارد ستون‌ها
-        $statusColors = [
-            'backlog' => '#7f8c8d',      // خاکستری
-            'ready'   => '#2980b9',      // آبی
-            'work in progress' => '#e67e22', // نارنجی
-            'working' => '#e67e22',      // نارنجی
-            'done'    => '#27ae60',      // سبز
-            'default' => '#34495e'       // سرمه‌ای
-        ];
-
+        // تفکیک تسک‌ها و شمارش وضعیت کلی پروژه
         $totalProjectTasks = count($tasks);
         $projectOpenTasks = 0;
         $projectClosedTasks = 0;
 
-        // گروه‌بندی داده‌ها بر اساس کاربر و ستون
-        $usersMap = [];
+        $userBuckets = []; // [owner_id => [column_id => [tasks]]]
+        $userStats   = []; // [owner_id => ['open' => x, 'closed' => y]]
+
         foreach ($tasks as $task) {
-            $isOpen = ($task['is_active'] == 1);
-            if ($isOpen) {
+            $ownerId = (int)$task['owner_id'];
+            $colId   = (int)$task['column_id'];
+
+            if (!isset($userBuckets[$ownerId])) {
+                $userBuckets[$ownerId] = [];
+                $userStats[$ownerId] = ['open' => 0, 'closed' => 0];
+            }
+            if (!isset($userBuckets[$ownerId][$colId])) {
+                $userBuckets[$ownerId][$colId] = [];
+            }
+            $userBuckets[$ownerId][$colId][] = $task;
+
+            if ($task['is_active'] == 1) {
                 $projectOpenTasks++;
+                $userStats[$ownerId]['open']++;
             } else {
                 $projectClosedTasks++;
+                $userStats[$ownerId]['closed']++;
             }
-
-            $uId = $task['owner_id'] ? $task['owner_id'] : 0;
-            $uName = $task['owner_name'] ? $task['owner_name'] : ($task['owner_username'] ? $task['owner_username'] : 'بدون مسئول (Unassigned)');
-            $cId = $task['column_id'];
-            $cTitle = $task['column_title'] ? $task['column_title'] : 'نامشخص';
-
-            if (!isset($usersMap[$uId])) {
-                $usersMap[$uId] = [
-                    'name' => $uName,
-                    'total_open' => 0,
-                    'total_closed' => 0,
-                    'columns' => []
-                ];
-            }
-
-            if ($isOpen) {
-                $usersMap[$uId]['total_open']++;
-            } else {
-                $usersMap[$uId]['total_closed']++;
-            }
-
-            if (!isset($usersMap[$uId]['columns'][$cId])) {
-                $usersMap[$uId]['columns'][$cId] = [
-                    'title' => $cTitle,
-                    'tasks' => []
-                ];
-            }
-
-            $usersMap[$uId]['columns'][$cId]['tasks'][] = $task;
         }
 
-        $projectProgress = $totalProjectTasks > 0 ? round(($projectClosedTasks / $totalProjectTasks) * 100) : 0;
-        $projectCenterColor = $projectProgress >= 70 ? '#27ae60' : ($projectProgress >= 40 ? '#e67e22' : '#c0392b');
+        $projectProgress = ($totalProjectTasks > 0)
+            ? round(($projectClosedTasks / $totalProjectTasks) * 100, 1)
+            : 0;
 
-        // ساخت آرایه‌های پلات‌لی (با وزن‌دهی صفر برای والدین تا نمودار خودکار ۳۶۰ درجه پر شود)
+        // انتخاب رنگ هسته پروژه براساس درصد پیشرفت
+        if ($projectProgress >= 80) {
+            $rootColor = '#27ae60'; // سبز موفقیت‌آمیز
+        } elseif ($projectProgress >= 40) {
+            $rootColor = '#2980b9'; // آبی پیشرفت پایدار
+        } elseif ($projectProgress > 0) {
+            $rootColor = '#d35400'; // نارنجی شروع به کار
+        } else {
+            $rootColor = '#34495e'; // زغالی تیره اولیه
+        }
+
+        // پالت رنگ‌های شکیل برای کارشناسان
+        $palette = ['#16a085', '#2980b9', '#8e44ad', '#2c3e50', '#f39c12', '#d35400', '#27ae60', '#7f8c8d'];
+        $userColorIndex = 0;
+
         $ids = ['root'];
-        $labels = [$project['name']];
+        $labels = ["<b>{$projectName}</b>"];
         $parents = [''];
-        $values = [0]; // ریشه وزن صفر دارد تا فرزندان کل ۳۶۰ درجه را تقسیم کنند
-        $colors = [$projectCenterColor];
-        $hoverTexts = [
-            "<b>پروژه: " . htmlspecialchars($project['name']) . "</b><br>" .
-            "کل کارها: {$totalProjectTasks}<br>" .
-            "کارهای باز: {$projectOpenTasks}<br>" .
-            "کارهای بسته: {$projectClosedTasks}<br>" .
-            "پیشرفت کل: {$projectProgress}%"
-        ];
+        $values = [0];
         $customData = [0];
+        $hoverTexts = [
+            "<b>پروژه: {$projectName}</b><br>" .
+            "کل کارها: {$totalProjectTasks}<br>" .
+            "📌 تسک‌های باز: {$projectOpenTasks}<br>" .
+            "✔ تسک‌های بسته: {$projectClosedTasks}<br>" .
+            "<b>درصد پیشرفت کل: {$projectProgress}%</b>"
+        ];
+        $colors = [$rootColor];
 
-        foreach ($usersMap as $uId => $uData) {
-            $userNodeId = "user_" . $uId;
-            $userTotal = $uData['total_open'] + $uData['total_closed'];
+        $rootWeight = 0;
 
+        // ساخت لایه‌ها: لایه ۲ (کارشناس) -> لایه ۳ (ستون) -> لایه ۴ (تسک) -> لایه ۵ (ساب‌تسک)
+        foreach ($userBuckets as $ownerId => $colsData) {
+            $userName = ($ownerId > 0) ? ($usersMap[$ownerId] ?? "کاربر {$ownerId}") : 'Unassigned (بدون مسئول)';
+            $userNodeId = "user_{$ownerId}";
+            $uOpen   = $userStats[$ownerId]['open'];
+            $uClosed = $userStats[$ownerId]['closed'];
+            $uTotal  = $uOpen + $uClosed;
+            $uProgress = ($uTotal > 0) ? round(($uClosed / $uTotal) * 100, 1) : 0;
+
+            $uColor = ($ownerId > 0) ? $palette[$userColorIndex % count($palette)] : '#7f8c8d';
+            $userColorIndex++;
+
+            $userHover = "<b>کارشناس: {$userName}</b><br>" .
+                         "کل تسک‌ها: {$uTotal}<br>" .
+                         "📌 کارهای باز: {$uOpen}<br>" .
+                         "✔ کارهای بسته: {$uClosed}<br>" .
+                         "پیشرفت فردی: {$uProgress}%";
+
+            // افزودن گره کارشناس (لایه ۲)
             $ids[] = $userNodeId;
-            $labels[] = $uData['name'];
+            $labels[] = $userName;
             $parents[] = 'root';
-            $values[] = 0; // کاربر وزن صفر دارد تا ستون‌ها فضا را پر کنند
-            $colors[] = '#1abc9c';
-            $hoverTexts[] = "<b>کارشناس: {$uData['name']}</b><br>" .
-                            "کل کارها: {$userTotal}<br>" .
-                            "📌 کارهای باز: {$uData['total_open']}<br>" .
-                            "✅ کارهای تکمیل: {$uData['total_closed']}";
             $customData[] = 0;
+            $hoverTexts[] = $userHover;
+            $colors[] = $uColor;
 
-            foreach ($uData['columns'] as $cId => $cData) {
-                $columnNodeId = "user_{$uId}_col_{$cId}";
-                $colTaskCount = count($cData['tasks']);
-                $cTitleLower = strtolower(trim($cData['title']));
+            $userWeightIndex = count($values);
+            $values[] = 0; // وزن بعداً از مجموع فرزندان محاسبه و پر می‌شود
+            $userTotalWeight = 0;
 
-                $colColor = $statusColors['default'];
-                foreach ($statusColors as $key => $hex) {
-                    if (strpos($cTitleLower, $key) !== false) {
-                        $colColor = $hex;
-                        break;
+            foreach ($colsData as $colId => $colTasks) {
+                $colTitle = $columns[$colId] ?? "Column {$colId}";
+                $colNodeId = "user_{$ownerId}_col_{$colId}";
+
+                // تعیین رنگ ستون کارشناس
+                $colLower = strtolower($colTitle);
+                if (strpos($colLower, 'done') !== false) {
+                    $cColor = '#2ecc71';
+                } elseif (strpos($colLower, 'work') !== false) {
+                    $cColor = '#e74c3c';
+                } elseif (strpos($colLower, 'ready') !== false) {
+                    $cColor = '#f1c40f';
+                } else {
+                    $cColor = '#3498db';
+                }
+
+                // افزودن گره ستون وضعیت (لایه ۳)
+                $ids[] = $colNodeId;
+                $labels[] = $colTitle;
+                $parents[] = $userNodeId;
+                $customData[] = 0;
+                $hoverTexts[] = "<b>وضعیت: {$colTitle}</b><br>تسک‌های این بخش: " . count($colTasks);
+                $colors[] = $cColor;
+
+                $colWeightIndex = count($values);
+                $values[] = 0;
+                $colTotalWeight = 0;
+
+                foreach ($colTasks as $t) {
+                    $taskId = (int)$t['id'];
+                    $taskNodeId = "task_{$taskId}";
+                    $taskShortTitle = "#{$taskId} " . mb_substr($t['title'], 0, 20) . (mb_strlen($t['title']) > 20 ? '...' : '');
+
+                    $subtasks = $this->subtaskModel->getAll($taskId);
+
+                    $ids[] = $taskNodeId;
+                    $labels[] = $taskShortTitle;
+                    $parents[] = $colNodeId;
+                    $customData[] = $taskId;
+                    $hoverTexts[] = "<b>#{$taskId}: {$t['title']}</b><br>مسئول: {$userName}<br>ستون: {$colTitle}<br>(برای باز شدن تسک کلیک کنید)";
+                    $colors[] = ($t['is_active'] == 1) ? '#5dade2' : '#95a5a6';
+
+                    if (!empty($subtasks)) {
+                        $taskWeightIndex = count($values);
+                        $values[] = 0;
+                        $taskTotalWeight = 0;
+
+                        foreach ($subtasks as $st) {
+                            $stId = (int)$st['id'];
+                            $stWeight = ($st['time_estimated'] > 0) ? (float)$st['time_estimated'] : 1.0;
+
+                            $ids[] = "subtask_{$stId}";
+                            $labels[] = "↳ " . mb_substr($st['title'], 0, 16);
+                            $parents[] = $taskNodeId;
+                            $values[] = $stWeight;
+                            $customData[] = $taskId;
+                            $hoverTexts[] = "<b>ساب‌تسک: {$st['title']}</b><br>وضعیت: " . ($st['status'] == 2 ? 'Done' : 'In Progress');
+                            $colors[] = ($st['status'] == 2) ? '#27ae60' : '#f39c12';
+
+                            $taskTotalWeight += $stWeight;
+                        }
+                        $values[$taskWeightIndex] = $taskTotalWeight;
+                        $colTotalWeight += $taskTotalWeight;
+                    } else {
+                        $tWeight = ($t['time_estimated'] > 0) ? (float)$t['time_estimated'] : 1.0;
+                        $values[] = $tWeight;
+                        $colTotalWeight += $tWeight;
                     }
                 }
 
-                $ids[] = $columnNodeId;
-                $labels[] = $cData['title'] . " ({$colTaskCount})";
-                $parents[] = $userNodeId;
-                $values[] = 0; // ستون وزن صفر دارد تا تسک‌ها فضا را پر کنند
-                $colors[] = $colColor;
-                $hoverTexts[] = "<b>ستون: {$cData['title']}</b><br>" .
-                                "مسئول: {$uData['name']}<br>" .
-                                "تعداد کار: {$colTaskCount}";
-                $customData[] = 0;
-
-                foreach ($cData['tasks'] as $task) {
-                    $taskNodeId = "task_" . $task['id'];
-                    $tWeight = 1; // تسک‌ها وزن ۱ دارند تا ۳۶۰ درجه به تساوی تقسیم شود و سفیدی نماند
-
-                    $subStats = isset($subtaskStats[$task['id']]) ? $subtaskStats[$task['id']] : ['total' => 0, 'done' => 0];
-                    $subText = $subStats['total'] > 0 ? "ساب‌تسک‌ها: {$subStats['done']} از {$subStats['total']}" : "بدون ساب‌تسک";
-
-                    $ids[] = $taskNodeId;
-                    $labels[] = "#" . $task['id'] . " " . mb_strimwidth($task['title'], 0, 18, '...');
-                    $parents[] = $columnNodeId;
-                    $values[] = $tWeight;
-                    $colors[] = $colColor;
-                    $hoverTexts[] = "<b>تسک #{$task['id']}: " . htmlspecialchars($task['title']) . "</b><br>" .
-                                    "ستون: {$cData['title']}<br>" .
-                                    "مسئول: {$uData['name']}<br>" .
-                                    "{$subText}<br>" .
-                                    "<i>(برای باز شدن کارت کلیک کنید)</i>";
-                    $customData[] = (int)$task['id'];
-                }
+                $values[$colWeightIndex] = $colTotalWeight;
+                $userTotalWeight += $colTotalWeight;
             }
+
+            $values[$userWeightIndex] = $userTotalWeight;
+            $rootWeight += $userTotalWeight;
         }
 
-        $chartData = json_encode([
-            'ids' => $ids,
-            'labels' => $labels,
-            'parents' => $parents,
-            'values' => $values,
-            'colors' => $colors,
-            'hoverTexts' => $hoverTexts,
-            'customData' => $customData,
-            'projectId' => $project['id']
-        ], JSON_UNESCAPED_UNICODE);
+        $values[0] = $rootWeight;
 
-        $this->response->html($this->template->render('SunburstAnalytics:analytic/show', [
-            'project'   => $project,
-            'title'     => t('Sunburst Interactive Workload & Progress'),
-            'chartData' => $chartData,
-        ]));
+        return json_encode([
+            'projectId'  => (int)$projectId,
+            'ids'        => $ids,
+            'labels'     => $labels,
+            'parents'    => $parents,
+            'values'     => $values,
+            'customData' => $customData,
+            'hoverTexts' => $hoverTexts,
+            'colors'     => $colors
+        ], JSON_UNESCAPED_UNICODE);
     }
 }
