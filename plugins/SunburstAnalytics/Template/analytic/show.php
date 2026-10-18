@@ -1,36 +1,30 @@
 <div class="page-header">
-    <h2>☀️ <?= t('Sunburst Interactive Workload & Progress') ?> (نمودار خورشیدی پیشرفت و بار کاری)</h2>
+    <h2><?= t('Sunburst Interactive Workload & Progress') ?> (داشبورد خورشیدی پیشرفت پروژه)</h2>
 </div>
 
-<div style="background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-        <div>
-            <span style="font-size: 15px; font-weight: bold; color: #2c3e50;">راهنمای تعاملی:</span>
-            <span style="font-size: 13px; color: #7f8c8d; margin-right: 10px;">
-                روی هر <b>کاربر</b> یا <b>ستون</b> کلیک کنید تا وارد جزئیات شوید. با کلیک روی <b>تسک نهایی</b>، صفحه تسک در برگه جدید باز می‌شود!
-            </span>
-        </div>
-        <div style="font-size: 12px; color: #555;">
-            طیف رنگ بیرونی: 
-            <span style="display:inline-block; width:12px; height:12px; background:#e74c3c; border-radius:3px;"></span> ۰٪ (شروع‌نشده) ➔ 
-            <span style="display:inline-block; width:12px; height:12px; background:#f1c40f; border-radius:3px;"></span> ۵۰٪ (در جریان) ➔ 
-            <span style="display:inline-block; width:12px; height:12px; background:#2ecc71; border-radius:3px;"></span> ۱۰۰٪ (تکمیل)
-        </div>
+<!-- راهنمای مدیریتی رنگ‌ها و تعامل -->
+<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; font-family: Tahoma, sans-serif; font-size: 13px;">
+    <div>
+        <span style="font-weight: bold; color: #1e293b;">راهنمای تعاملی:</span>
+        <span style="color: #64748b;">موس را روی هر بخش ببرید تا آمار تسک‌ها را ببینید. با کلیک روی هر بخش زوم کنید و با کلیک روی تسک‌های بیرونی، مستقیم وارد کارت تسک شوید.</span>
     </div>
-
-    <!-- کانتینر نمودار خورشیدی -->
-    <div id="sunburst-chart-container" data-project-id="<?= $project['id'] ?>" style="width: 100%; min-height: 720px;">
-        <div id="chart-loading-msg" style="text-align: center; padding: 50px; color: #7f8c8d; font-size: 14px;">
-            در حال بارگذاری نمودار خورشیدی...
-        </div>
+    <div style="display: flex; gap: 14px; align-items: center; font-size: 12px;">
+        <span style="font-weight: bold; color: #334155;">راهنمای وضعیت و رنگ‌ها:</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#7f8c8d;border-radius:3px;vertical-align:middle;margin-left:4px;"></span>Backlog</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#2980b9;border-radius:3px;vertical-align:middle;margin-left:4px;"></span>Ready</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#e67e22;border-radius:3px;vertical-align:middle;margin-left:4px;"></span>Working (WIP)</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#27ae60;border-radius:3px;vertical-align:middle;margin-left:4px;"></span>Done (انجام‌شده)</span>
     </div>
 </div>
 
-<!-- کپسوله‌سازی امن داده‌های JSON بدون فعال‌سازی خطای CSP -->
-<script id="sunburst-data-holder" type="application/json">
+<!-- کانتینر نمودار خورشیدی -->
+<div id="sunburst_chart" style="width: 100%; min-height: 750px; direction: ltr;"></div>
+
+<!-- داده‌های تزریق‌شده از سمت سرور به جاوااسکریپت -->
+<script type="application/json" id="sunburst-data-holder">
 <?= $chartData ?>
 </script>
 
-<!-- فراخوانی اسکریپت‌های اکسترنال محلی منطبق بر استاندارد Content Security Policy -->
-<script src="plugins/SunburstAnalytics/Asset/plotly.min.js"></script>
-<script src="plugins/SunburstAnalytics/Asset/sunburst.js"></script>
+<!-- لود مطمئن اسکریپت‌ها -->
+<script type="text/javascript" src="plugins/SunburstAnalytics/Asset/plotly.min.js"></script>
+<script type="text/javascript" src="plugins/SunburstAnalytics/Asset/sunburst.js"></script>

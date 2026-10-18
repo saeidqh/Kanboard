@@ -1,87 +1,91 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const container = document.getElementById('sunburst-chart-container');
-    const loadingElem = document.getElementById('chart-loading-msg');
-    const dataHolder = document.getElementById('sunburst-data-holder');
+document.addEventListener('DOMContentLoaded', function () {
+    const dataContainer = document.getElementById('sunburst-data-holder');
+    const plotDiv = document.getElementById('sunburst_chart');
 
-    if (!container || !dataHolder) return;
-
-    if (typeof Plotly === 'undefined') {
-        container.innerHTML = '<div style="background:#fde8e8; color:#c81e1e; padding:20px; border-radius:8px; border:1px solid #f8b4b4; font-family:Tahoma; font-size:13px;">⚠️ فایل کتابخانه Plotly شناسایی نشد.</div>';
+    if (!dataContainer || !plotDiv) {
         return;
     }
 
-    try {
-        const rawData = JSON.parse(dataHolder.textContent || '{}');
-
-        if (!rawData || !rawData.ids || rawData.ids.length <= 1) {
-            container.innerHTML = '<div style="background:#fefcbf; color:#975a16; padding:20px; border-radius:8px; text-align:center; font-family:Tahoma;">هیچ تسک فعالی برای نمایش در پروژه یافت نشد!</div>';
-            return;
-        }
-
-        const trace = {
-            type: "sunburst",
-            ids: rawData.ids,
-            labels: rawData.labels,
-            parents: rawData.parents,
-            values: rawData.values,
-            hovertext: rawData.hoverTexts,
-            hoverinfo: "text",
-            customdata: rawData.customData,
-            outsidetextfont: { size: 12, color: "#2c3e50" },
-            leaf: { opacity: 0.95 },
-            marker: {
-                colors: rawData.colors,
-                colorscale: [
-                    [0, '#e74c3c'],     // قرمز: ۰٪ پیشرفت
-                    [0.5, '#f1c40f'],   // زرد: ۵۰٪ پیشرفت
-                    [1.0, '#2ecc71']    // سبز: ۱۰۰٪ پیشرفت
-                ],
-                cmin: 0,
-                cmax: 100,
-                colorbar: {
-                    title: 'پیشرفت %',
-                    titleside: 'top',
-                    ticksuffix: '%',
-                    len: 0.55
-                },
-                line: { width: 1.5, color: '#ffffff' }
-            }
-        };
-
-        const layout = {
-            margin: { l: 15, r: 15, b: 15, t: 15 },
-            sunburstcolorway: ["#3498db", "#9b59b6", "#34495e", "#1abc9c", "#e67e22", "#27ae60"],
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            font: { family: "Tahoma, Segoe UI, sans-serif" }
-        };
-
-        const config = {
-            responsive: true,
-            displayModeBar: true,
-            displaylogo: false,
-            modeBarButtonsToRemove: ['lasso2d', 'select2d']
-        };
-
-        Plotly.newPlot(container, [trace], layout, config).then(function () {
-            if (loadingElem) loadingElem.style.display = 'none';
-        });
-
-        // کلیک روی تسک برای باز شدن کارت مربوطه در برگه جدید
-        container.on('plotly_sunburstclick', function (data) {
-            if (!data.points || data.points.length === 0) return;
-            const pt = data.points[0];
-            const taskId = pt.customdata;
-            const projectId = container.getAttribute('data-project-id');
-
-            if (taskId && taskId > 0) {
-                const taskUrl = '?controller=TaskViewController&action=show&task_id=' + taskId + '&project_id=' + projectId;
-                window.open(taskUrl, '_blank');
-                return false;
-            }
-        });
-
-    } catch (err) {
-        console.error("Plotly Sunburst Error:", err);
-        container.innerHTML = '<div style="color:red; padding:20px; font-family:Tahoma;">خطا در رندر نمودار: ' + err.message + '</div>';
+    if (typeof Plotly === 'undefined') {
+        plotDiv.innerHTML = '<div style="padding: 20px; color: #dc2626; text-align: center; font-family: Tahoma;">خطا: کتابخانه Plotly بارگذاری نشد. لطفاً مطمئن شوید فایل plotly.min.js در پوشه Asset وجود دارد.</div>';
+        return;
     }
+
+    let chartData;
+    try {
+        chartData = JSON.parse(dataContainer.textContent.trim());
+    } catch (e) {
+        console.error("Sunburst Error: خطا در پردازش داده‌ها:", e);
+        plotDiv.innerHTML = '<div style="padding: 20px; color: #dc2626; text-align: center; font-family: Tahoma;">خطا در خواندن داده‌های نمودار.</div>';
+        return;
+    }
+
+    if (!chartData || !chartData.ids || chartData.ids.length <= 1) {
+        plotDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b; font-family: Tahoma;">هیچ تسکی برای نمایش در این پروژه وجود ندارد.</div>';
+        return;
+    }
+
+    const data = [{
+        type: "sunburst",
+        ids: chartData.ids,
+        labels: chartData.labels,
+        parents: chartData.parents,
+        values: chartData.values,
+        customdata: chartData.customData,
+        hovertext: chartData.hoverTexts,
+        hoverinfo: "text",
+        textinfo: "label",
+        insidetextorientation: "radial",
+        textfont: {
+            family: "Tahoma, Segoe UI, sans-serif",
+            size: 11,
+            color: "#ffffff"
+        },
+        marker: {
+            colors: chartData.colors,
+            line: {
+                color: "#ffffff",
+                width: 1.5
+            }
+        },
+        leaf: {
+            opacity: 0.95
+        }
+    }];
+
+    const layout = {
+        margin: { l: 15, r: 15, b: 15, t: 15 },
+        paper_bgcolor: "transparent",
+        hoverlabel: {
+            bgcolor: "#0f172a",
+            bordercolor: "#38bdf8",
+            font: {
+                family: "Tahoma, Segoe UI, sans-serif",
+                size: 13,
+                color: "#f8fafc"
+            },
+            align: "right"
+        }
+    };
+
+    const config = {
+        responsive: true,
+        displayModeBar: true,
+        displaylogo: false,
+        modeBarButtonsToRemove: ['sendDataToCloud', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toggleHover', 'resetViews']
+    };
+
+    Plotly.newPlot(plotDiv, data, layout, config);
+
+    // مدیریت کلیک برای هدایت مستقیم به تسک در برگه جدید
+    plotDiv.on('plotly_click', function (eventData) {
+        if (!eventData || !eventData.points || eventData.points.length === 0) return;
+        const pt = eventData.points[0];
+        const taskId = pt.customdata;
+        if (taskId && taskId > 0) {
+            const projectId = chartData.projectId || 1;
+            const targetUrl = "?controller=TaskViewController&action=show&task_id=" + taskId + "&project_id=" + projectId;
+            window.open(targetUrl, '_blank');
+        }
+    });
 });
