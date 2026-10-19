@@ -75,19 +75,20 @@
     margin-right: 6px;
 }
 
-/* دکمه بازشونده مثبت */
+
 .btn-toggle-columns {
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
     color: #334155;
-    border-radius: 50%;
-    width: 26px;
-    height: 26px;
+    border-radius: 4px; /* گردی کم برای ظاهر دکمه‌ای */
+    width: 24px;
+    height: 24px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 11px;
+    font-size: 14px; /* فونت بزرگ‌تر برای دیده شدن + */
+    font-weight: bold;
     transition: all 0.2s ease;
 }
 
@@ -101,7 +102,6 @@
     background: #475569;
     color: #ffffff;
 }
-
 /* سطر جزییات ستون‌ها */
 .user-columns-detail-row {
     background: #f8fafc;

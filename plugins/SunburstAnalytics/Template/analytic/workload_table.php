@@ -46,8 +46,8 @@
                     ?>
                     <tr class="<?= $rowClass ?>">
                         <td style="text-align: center;">
-                            <button type="button" class="btn-toggle-columns" data-target="user-cols-<?= $uid ?>" title="Toggle task breakdown">
-                                <i class="fa fa-plus"></i>
+                           <button type="button" class="btn-toggle-columns" data-target="user-cols-<?= $uid ?>" title="Toggle task breakdown">
+                                +
                             </button>
                         </td>
                         <td>

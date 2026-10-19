@@ -107,11 +107,22 @@ document.addEventListener("click", function (e) {
 
     if (row.style.display === "none" || row.style.display === "") {
         row.style.display = "table-row";
-        if (icon) icon.className = "fa fa-minus";
+        if (icon) {
+            // تغییر آیکون به منفی
+            icon.className = "fa fa-minus";
+        } else {
+            // اگر آیکون وجود نداشت، خود متن دکمه را تغییر بده
+            btn.innerHTML = "-";
+        }
         btn.classList.add("active");
     } else {
         row.style.display = "none";
-        if (icon) icon.className = "fa fa-plus";
+        if (icon) {
+            // تغییر آیکون به مثبت
+            icon.className = "fa fa-plus";
+        } else {
+            btn.innerHTML = "+";
+        }
         btn.classList.remove("active");
     }
 });
