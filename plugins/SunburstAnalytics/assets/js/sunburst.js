@@ -115,3 +115,57 @@ document.addEventListener("click", function (e) {
         btn.classList.remove("active");
     }
 });
+// ========================================
+// Tab Switching Logic (CSP-safe)
+// ========================================
+document.addEventListener("DOMContentLoaded", function () {
+    // خواندن projectId از DOM
+    var configEl = document.getElementById("sunburst-app-config");
+    if (configEl) {
+        window.sunburstProjectId = parseInt(configEl.getAttribute("data-project-id")) || 1;
+    }
+
+    // اتصال دکمه‌های تب به تابع switchAnalyticsTab
+    var tabButtons = document.querySelectorAll(".analytics-tabs-nav .tab-btn");
+    tabButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var targetTab = btn.getAttribute("data-tab");
+            if (targetTab) {
+                switchAnalyticsTab(targetTab);
+            }
+        });
+    });
+});
+
+function switchAnalyticsTab(tabName) {
+    var workloadTab = document.getElementById("tab-workload");
+    var rankingTab = document.getElementById("tab-ranking");
+    var buttons = document.querySelectorAll(".analytics-tabs-nav .tab-btn");
+
+    if (!workloadTab || !rankingTab) {
+        console.error("Analytics tab containers not found!");
+        return;
+    }
+
+    buttons.forEach(function (btn) {
+        btn.classList.remove("active");
+    });
+
+    if (tabName === "workload") {
+        workloadTab.style.display = "block";
+        rankingTab.style.display = "none";
+        if (buttons[0]) buttons[0].classList.add("active");
+
+        // Resize Plotly after tab becomes visible
+        var chartElem = document.getElementById("sunburst_chart");
+        if (window.Plotly && chartElem) {
+            setTimeout(function () {
+                window.Plotly.Plots.resize(chartElem);
+            }, 50);
+        }
+    } else {
+        workloadTab.style.display = "none";
+        rankingTab.style.display = "block";
+        if (buttons[1]) buttons[1].classList.add("active");
+    }
+}

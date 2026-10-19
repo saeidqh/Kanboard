@@ -6,24 +6,41 @@ use Kanboard\Controller\BaseController;
 
 class SunburstController extends BaseController
 {
-    public function show()
-    {
-        $project = $this->getProject();
+        public function show()
+{
+    $project = $this->getProject();
 
-        // ۱. آماده‌سازی ساختار کامل نمودار خورشیدی
-        $chartData = $this->buildSunburstData($project['id']);
+    // ۱. داده بار کاری کاربران
+    $workloadData = $this->workloadAnalysisService->getProjectWorkloadAnalysis($project['id']);
 
-        // ۲. آماده‌سازی داده‌های جدول تحلیل بار کاری از لایه سرویس
-        $workloadService = new \Kanboard\Plugin\SunburstAnalytics\Service\WorkloadAnalysisService($this->container);
-        $workloadData = $workloadService->getProjectWorkloadAnalysis($project['id']);
+    // ۲. ساخت داده‌های نمودار خورشیدی
+    $chartData = $this->buildSunburstData($project['id']);
 
-        $this->response->html($this->helper->layout->analytic('SunburstAnalytics:analytic/show', [
-            'project'      => $project,
-            'title'        => t('Sunburst Chart & Workload Monitoring'),
-            'chartData'    => $chartData,
-            'workloadData' => $workloadData,
-        ]));
-    }
+    // ۳. فیلتر تاریخ رتبه‌بندی
+    $fromInput = $this->request->getStringParam('from_date');
+    $toInput = $this->request->getStringParam('to_date');
+
+    $fromTimestamp = !empty($fromInput) ? strtotime($fromInput . ' 00:00:00') : strtotime('-30 days 00:00:00');
+    $toTimestamp = !empty($toInput) ? strtotime($toInput . ' 23:59:59') : time();
+
+    // ۴. داده رتبه‌بندی تیم
+    $rankingData = $this->workloadAnalysisService->getProjectTeamRanking(
+        $project['id'],
+        $fromTimestamp,
+        $toTimestamp
+    );
+
+    $this->response->html($this->template->render('SunburstAnalytics:analytic/show', [
+        'project'      => $project,
+        'title'        => t('Sunburst Analytics & Team Performance'),
+        'workloadData' => $workloadData,
+        'rankingData'  => $rankingData,
+        'chartData'    => $chartData,
+        'fromDate'     => date('Y-m-d', $fromTimestamp),  // ✅ اضافه شد
+        'toDate'       => date('Y-m-d', $toTimestamp),    // ✅ اضافه شد
+    ]));
+}
+
 
     private function buildSunburstData($projectId)
     {
@@ -111,7 +128,7 @@ class SunburstController extends BaseController
 
         // ساخت لایه‌ها: لایه ۲ (کارشناس) -> لایه ۳ (ستون) -> لایه ۴ (تسک) -> لایه ۵ (ساب‌تسک)
         foreach ($userBuckets as $ownerId => $colsData) {
-            $userName = ($ownerId > 0) ? ($usersMap[$ownerId] ?? "کاربر {$ownerId}") : 'Unassigned (بدون مسئول)';
+            $userName = ($ownerId > 0) ? ($usersMap[$ownerId] ?? "کاربر {$ownerId}") : 'Unassigned';
             $userNodeId = "user_{$ownerId}";
             $uOpen   = $userStats[$ownerId]['open'];
             $uClosed = $userStats[$ownerId]['closed'];
