@@ -1,0 +1,249 @@
+/* ==========================================================
+   AccessGuard Plugin - Expert Role Custom CSS
+   مجموعه استایل‌های اختصاصی برای محدودسازی و پاکسازی رابط کاربری نقش کارشناس
+   ========================================================== */
+
+/* ۱. مخفی‌سازی کامل بخش فیلترها، جستجو و منوهای کشویی بالای برد */
+.board-search,
+#board-search,
+form[method="get"],
+.input-addon,
+.input-addon-field,
+input[name="search"],
+.fa-filter,
+.fa-user,
+.fa-folder,
+.fa-calendar,
+    /* مخفی‌سازی فقط منوی کشویی هدر (پروفایل کاربر)، نه اسم ستون‌ها */
+    .page-header .dropdown-menu,
+    header .dropdown-menu {
+        display: none !important;
+    }
+.project-header .dropdown-component > .dropdown > a.action-menu[title="Configure this project"] {
+    display: none !important;
+}
+
+/* ۱. نمایش دکمه آواتار و پروفایل در هدر */
+header .dropdown > a.dropdown-menu-link-icon {
+    display: inline-flex !important;
+}
+
+/* ۲. مخفی کردن گزینه‌های خاص یا کل منوی کشویی زیرین وقتی باز می‌شود */
+/* اگر می‌خواهی وقتی روی پروفایل کلیک شد، منوی زیر آن باز نشود یا گزینه‌های خاصی مخفی شوند: */
+header .dropdown > .dropdown-menu {
+    display: none !important;
+}
+
+/* حذف کامل ردیف‌های خالی منوی پروفایل (لینک مخفی‌شده، li والدش هم مخفی شود) */
+.dropdown-submenu-open li:has(a[href*="dashboard"]),
+.dropdown-submenu-open li:has(a[href*="/projects"]),
+.dropdown-submenu-open li:has(a[href*="docs.kanboard.org"]) {
+    display: none !important;
+}
+/* مخفی‌سازی My profile در منوی پروفایل */
+.dropdown-submenu-open li:has(a[href*="/user/show/"]) {
+    display: none !important;
+}
+
+/* مخفی‌سازی فقط ردیف معرفی پروژه در داشبورد */
+#dashboard .table-list > .table-list-row {
+    display: none !important;
+}
+
+/* مخفی‌سازی شماره تسک‌ها روی کارت‌های برد */
+
+.task-board-header .dropdown-menu-link-icon {
+    pointer-events: none !important;
+}
+
+/* غیرفعال‌کردن لینک‌های نام کاربران در جدول‌های تاریخچه و تحلیل‌ها */
+.table-striped a[href*="/user/show/"] {
+    pointer-events: none !important;
+    cursor: default !important;
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+.task-summary-column a[href*="/board/"] {
+    display: none !important;
+}
+
+/* پنهان‌کردن برچسب و فیلد انتخاب مسئول در مودال افزودن ساب‌تسک */
+label[for="form-user_id"],
+select#form-user_id {
+    display: none !important;
+}
+/* نمایش کامل هدرها در جدول ساب‌تسک‌های تسک */
+table.subtasks-table thead {
+    display: table-header-group !important;
+}
+
+table.subtasks-table tr {
+    display: table-row !important;
+}
+
+table.subtasks-table th {
+    display: table-cell !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+
+/* پنهان‌کردن گزینه Move position در منوی کناری جزئیات تسک */
+.sidebar li:has(a[href*="/position/show"]),
+.sidebar a[href*="/position/show"] {
+    display: none !important;
+}
+
+
+    /* مخفی کردن گزینه Change password از منوی سایدبار */
+/* مخفی کردن گزینه Change password در منوی کاربری */
+.sidebar ul li a[href*="/user/password"],
+.sidebar ul li:has(a[href*="/user/password"]) {
+    display: none !important;
+}
+
+
+
+/* ۲. مخفی‌سازی دکمه تنظیمات (چرخ‌دنده) و منوهای مدیریتی پروژه */
+.board-header .board-header-btn,
+a[href*="ProjectViewController"],
+a[href*="analytic"],
+a[href*="gantt"],
+/*a[href*="action"],*/
+
+a[href*="project/create"],
+a[href*="TaskCreationController"],
+.board-add-icon {
+    display: none !important;
+}
+/* ==========================================================
+   مخفی‌سازی فقط علامت چرخ‌دنده (منوی ویرایش/حذف) روی ساب‌تسک‌ها
+   بدون اثرگذاری روی دکمه Start/Stop تایمر
+   ========================================================== */
+.subtasks-table .dropdown > a.dropdown-menu-link-icon {
+    display: none !important;
+}
+/* ==========================================================
+   مخفی‌سازی نمای گانت در بالای صفحات پروژه/تسک
+   ========================================================== */
+#main .views-switcher-component a.view-gantt,
+.views li:has(a.view-gantt) {
+    display: none !important;
+}
+/* ==========================================================
+   مخفی‌سازی دکمه/علامت تیک تغییر وضعیت (Completion) ساب‌تسک
+   ========================================================== */
+a.js-subtask-toggle-status {
+    display: none !important;
+}
+/* ۳. مخفی‌سازی تب‌های Overview، Gantt و Documentation در سطح پروژه */
+.activity-header ul.nav.nav-tabs li a[href*="OverviewController"],
+.activity-header ul.nav.nav-tabs li a[href*="GanttController"],
+.activity-header ul.nav.nav-tabs li a[href*="Documentation"],
+.activity-header ul.nav.nav-tabs li a[href*="analytic"],
+.activity-header ul.nav.nav-tabs li a[href*="calendar"],
+.activity-header ul.nav.nav-tabs li:has(a[href*="OverviewController"]),
+.activity-header ul.nav.nav-tabs li:has(a[href*="GanttController"]),
+.activity-header ul.nav.nav-tabs li:has(a[href*="Documentation"]) {
+    display: none !important;
+}
+
+/* ۴. مخفی‌سازی عناصر صفحه جزئیات تسک (Overview، List، ویرایش، کپی و جابجایی) */
+/* مخفی کردن تب‌های Overview و List در بالای صفحه جزئیات تسک */
+.activity-header ul.nav.nav-tabs li:has(a[href*="OverviewController"]),
+.activity-header ul.nav.nav-tabs li:has(a[href*="BoardViewController"]),
+.activity-header a[href*="OverviewController"],
+.activity-header a[href*="BoardViewController"],
+a[href*="BoardViewController"][title*="Board"],
+a[href*="OverviewController"] {
+    display: none !important;
+}
+
+/* مخفی کردن دکمه‌های مدیریت، ویرایش، Duplicate و Move در سایدبار صفحه تسک */
+a[href*="TaskModificationController"], /* Edit the task */
+a[href*="TaskDuplicationController"],  /* Duplicate / Duplicate to project */
+a[href*="TaskMovePositionController"], /* Move position */
+a[href*="TaskMoveProjectController"],  /* Move to project */
+.sidebar ul li a[href*="edit"],
+.sidebar ul li a[href*="duplicate"],
+.sidebar ul li a[href*="copy-to-project"],
+.sidebar ul li a[href*="move"],
+.sidebar ul li a[href*="move-position"] {
+    display: none !important;
+}
+/* ==========================================================
+   اصلاحیه قطعی: مخفی‌سازی تب‌های Overview، List و دکمه Move position در صفحه تسک
+   ========================================================== */
+
+/* ۱. مخفی کردن تب Overview در صفحه جزئیات تسک */
+.activity-header li:has(a[href*="/overview"]),
+a[href*="/overview"],
+.page-header ul.nav.nav-tabs li:first-child {
+    display: none !important;
+}
+
+/* ۲. مخفی کردن تب List (BoardViewController) در صفحه جزئیات تسک */
+
+.activity-header li:has(a[href*="/list"]),
+
+a[href*="/list"] {
+    display: none !important;
+}
+/* ==========================================================
+   اصلاح نهایی تب‌های بالای برد: فقط Board بماند
+   ========================================================== */
+
+/* مخفی کردن تب‌های Overview و List بر اساس کلاس اختصاصی لینک‌ها */
+.views li:has(a.view-overview),
+.views li:has(a.view-list),
+a.view-overview,
+a.view-list {
+    display: none !important;
+}
+
+/* تضمین نمایش تب Board */
+.views li a.view-board {
+    display: inline-block !important;
+}
+
+
+/* ۳. مخفی کردن گزینه Move position در انتهای سایدبار تسک */
+.sidebar ul li a[href*="move-position"],
+a[href*="TaskMovePositionController"] {
+    display: none !important;
+}
+
+/* ==========================================================
+   مخفی‌سازی دکمه ویرایش روی کارت‌های تسک در برد (مخصوص Expert)
+   ========================================================== */
+.task-board-header a[href*="edit"],
+.task-board-header .fa-edit {
+    display: none !important;
+}
+/* ==========================================================
+   مخفی‌سازی Overview سایدبار، Project management و My activity stream
+   ========================================================== */
+
+/* ۱. مخفی کردن تب Overview در سایدبار داشبورد */
+.sidebar #dashboard a[href*="dashboard"],
+.sidebar li:has(a[href*="dashboard"]) {
+    display: none !important;
+}
+
+/* ۲. مخفی کردن دکمه Project management در هدر بالای داشبورد */
+.page-header a[href*="projects"] {
+    display: none !important;
+}
+
+/* ۳. مخفی کردن دکمه My activity stream در هدر بالای داشبورد */
+.page-header a[href*="my-activity"] {
+    display: none !important;
+}
+
+/* ==========================================================
+   مخفی‌سازی آمار و اسامی ستون‌ها در خلاصه پروژه روی داشبورد
+   ========================================================== */
+.table-list-row .table-list-details {
+    display: none !important;
+}
