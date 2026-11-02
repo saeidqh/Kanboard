@@ -45,9 +45,23 @@ header .dropdown > .dropdown-menu {
     display: none !important;
 }
 
-/* مخفی‌سازی فقط ردیف معرفی پروژه در داشبورد */
+/* مخفی‌سازی فقط ردیف معرفی پروژه در داشبورد 
 #dashboard .table-list > .table-list-row {
     display: none !important;
+}
+*/
+
+
+/* مخفی کردن آیکون فلش منوی کشویی در کنار شماره تسک */
+.table-list-row .dropdown > a.dropdown-menu-link-icon.dropdown-menu i.fa-caret-down {
+    display: none !important;
+}
+
+/* غیرفعال کردن قابلیت کلیک و لینک بودن شماره تسک */
+.table-list-row .dropdown > a.dropdown-menu-link-icon.dropdown-menu {
+    pointer-events: none !important;
+    cursor: default !important;
+    color: inherit !important;
 }
 
 /* مخفی‌سازی شماره تسک‌ها روی کارت‌های برد */

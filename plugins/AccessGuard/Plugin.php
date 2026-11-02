@@ -9,10 +9,10 @@ class Plugin extends Base
 {
     public function initialize()
     {
-        // ۱. تزریق تمپلیت کنترل منوها در بالای صفحات
+        // ۱. تزریق CSS فقط و فقط برای کاربران با نقش Expert درون پروژه
         $this->template->hook->attach('template:layout:head', 'AccessGuard:guard/head');
 
-        // ۲. هوک جلوگیری از ایجاد تسک برای اکسپرت سمت سرور (حتی اگر آدرس را دستی در مرورگر بزند)
+        // ۲. هوک امنیتی سرور برای جلوگیری از ایجاد تسک
         $this->hook->on('controller:before', function ($controllerName, $actionName) {
             if ($controllerName === 'TaskCreationController') {
                 $userRole = $this->userSession->getRole();
@@ -23,7 +23,7 @@ class Plugin extends Base
                     $projectRole = $this->projectUserRoleModel->getUserRole($projectId, $userId);
                     $policy = AccessPolicy::getPermissions($projectRole ?: $userRole);
 
-                    // اگر حق ساخت تسک ندارد، پیام اخطار و ریدایرکت
+                    // اگر ادمین نبود و اجازه ساخت تسک نداشت
                     if ($policy['can_create_task'] === false && $userRole !== 'app-admin') {
                         $this->flash->failure(t('Access denied: Your role does not allow creating tasks.'));
                         $this->response->redirect($this->helper->url->to('BoardViewController', 'show', ['project_id' => $projectId]));
