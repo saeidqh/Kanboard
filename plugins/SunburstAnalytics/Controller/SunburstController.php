@@ -114,8 +114,8 @@ class SunburstController extends BaseController
 
     private function buildSunburstData($projectId)
     {
-        // دریافت تمام تسک‌های پروژه؛ فعال و بسته
-        $tasks = $this->db->table('tasks')
+        // تسک‌های پروژه با فیلتر سلسله‌مراتبی (Level 1 = همه؛ بقیه = خود + زیرمجموعه)
+        $query = $this->db->table('tasks')
             ->columns(
                 'id',
                 'title',
@@ -125,8 +125,21 @@ class SunburstController extends BaseController
                 'time_estimated',
                 'time_spent'
             )
-            ->eq('project_id', $projectId)
-            ->findAll();
+            ->eq('project_id', $projectId);
+
+        if (class_exists('\Kanboard\Plugin\HierarchicalRoles\Helper\HierarchicalRoleHelper')) {
+            $helper = new \Kanboard\Plugin\HierarchicalRoles\Helper\HierarchicalRoleHelper($this->container);
+            $scopeIds = $helper->getAnalyticsVisibleUserIds($projectId);
+            if ($scopeIds !== null) {
+                if (empty($scopeIds)) {
+                    $query->eq('owner_id', -1);
+                } else {
+                    $query->in('owner_id', $scopeIds);
+                }
+            }
+        }
+
+        $tasks = $query->findAll();
 
         $columns = $this->columnModel->getList($projectId);
         $project = $this->projectModel->getById($projectId);

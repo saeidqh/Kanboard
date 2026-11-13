@@ -20,16 +20,6 @@ class HierarchicalRoleHelper extends Base
 
     /**
      * Generic module access check by slug
-     *
-     * Usage in templates:
-     *   <?php if ($this->hierarchicalRoleHelper->canAccessModule($project['id'], 'analytics')): ?>
-     *
-     * Usage in controllers:
-     *   if (!$this->helper->hierarchicalRoleHelper->canAccessModule($project['id'], 'project_settings')) { ... }
-     *
-     * @param int    $projectId
-     * @param string $slug   e.g. org_structure, analytics, project_settings
-     * @return bool
      */
     public function canAccessModule($projectId, $slug)
     {
@@ -60,6 +50,99 @@ class HierarchicalRoleHelper extends Base
 
         $roleAccessModel = new RoleAccessModel($this->container);
         return $roleAccessModel->hasAccess($roleId, (int) $module['id'], $projectId);
+    }
+
+    /**
+     * Whether current user sees FULL project analytics (all users/tasks).
+     * True for: app admin OR hierarchical role level = 1
+     */
+    public function seesFullProjectAnalytics($projectId)
+    {
+        if ($this->userSession->isAdmin()) {
+            return true;
+        }
+
+        $userId = (int) $this->userSession->getId();
+        $roleUserModel = new HierarchicalRoleUserModel($this->container);
+        $roleId = $roleUserModel->getRoleIdForUser($projectId, $userId);
+
+        if (!$roleId) {
+            return false;
+        }
+
+        $roleModel = new HierarchicalRoleModel($this->container);
+        $role = $roleModel->getById($roleId);
+
+        return $role && (int) $role['level'] === 1;
+    }
+
+    /**
+     * User IDs whose data the current user may see in analytics / sunburst.
+     *
+     * Returns:
+     *   null  → no restriction (full project: admin or Level 1)
+     *   int[] → only these user ids (self + subordinates under the role tree)
+     */
+    public function getAnalyticsVisibleUserIds($projectId)
+    {
+        if ($this->seesFullProjectAnalytics($projectId)) {
+            return null;
+        }
+
+        $userId = (int) $this->userSession->getId();
+        $roleUserModel = new HierarchicalRoleUserModel($this->container);
+        $roleModel = new HierarchicalRoleModel($this->container);
+
+        $myRoleId = $roleUserModel->getRoleIdForUser($projectId, $userId);
+
+        // No role → only self
+        if (!$myRoleId) {
+            return array($userId);
+        }
+
+        $descendantRoleIds = $roleModel->getDescendantIds($myRoleId);
+        $allowedRoleIds = array_merge(array($myRoleId), $descendantRoleIds);
+        $userIds = $roleUserModel->getUsersByRoleIds($allowedRoleIds);
+        $userIds[] = $userId;
+
+        return array_values(array_unique(array_map('intval', $userIds)));
+    }
+
+    /**
+     * Filter a list of task rows (must have owner_id) to analytics scope.
+     *
+     * @param int   $projectId
+     * @param array $tasks
+     * @return array
+     */
+    public function filterTasksByAnalyticsScope($projectId, array $tasks)
+    {
+        $visibleIds = $this->getAnalyticsVisibleUserIds($projectId);
+
+        if ($visibleIds === null) {
+            return $tasks;
+        }
+
+        $set = array_flip($visibleIds);
+        $out = array();
+
+        foreach ($tasks as $task) {
+            $ownerId = isset($task['owner_id']) ? (int) $task['owner_id'] : 0;
+            // Include unassigned only for full scope; for restricted scope skip unassigned
+            if ($ownerId > 0 && isset($set[$ownerId])) {
+                $out[] = $task;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * SQL-friendly: return null (no filter) or list of ints for WHERE owner_id IN (...)
+     */
+    public function getAnalyticsOwnerIdInClause($projectId)
+    {
+        return $this->getAnalyticsVisibleUserIds($projectId);
     }
 
     /**

@@ -56,3 +56,10 @@ if (!$this->helper->hierarchicalRoleHelper->canAccessModule($project['id'], 'pro
 ## Author
 
 Ahvaz005 Team – v1.2.0
+
+## Analytics scope (v1.3)
+
+- Level 1 / Admin → full project charts
+- Other levels → only tasks assigned to self + subordinates
+- Core: User repartition + Task distribution are scoped automatically
+- Sunburst: see SUNBURST_INTEGRATION.md

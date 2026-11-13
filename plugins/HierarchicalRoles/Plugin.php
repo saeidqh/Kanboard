@@ -22,6 +22,15 @@ class Plugin extends Base
         $this->template->setTemplateOverride('project_header/dropdown', 'HierarchicalRoles:project_header/dropdown');
         $this->template->setTemplateOverride('analytic/layout', 'HierarchicalRoles:analytic/layout');
 
+        // Scope core analytics (user / task distribution) by hierarchy
+        $this->container['userDistributionAnalytic'] = $this->container->factory(function ($c) {
+            return new \Kanboard\Plugin\HierarchicalRoles\Analytic\ScopedUserDistributionAnalytic($c);
+        });
+        $this->container['taskDistributionAnalytic'] = $this->container->factory(function ($c) {
+            return new \Kanboard\Plugin\HierarchicalRoles\Analytic\ScopedTaskDistributionAnalytic($c);
+        });
+
+
         // Project menu entry (only visible if user has module access)
         $this->template->hook->attach('template:project:dropdown', 'HierarchicalRoles:project/dropdown');
         $this->template->hook->attach('template:project-header:view-switcher', 'HierarchicalRoles:project/header');
@@ -50,7 +59,7 @@ class Plugin extends Base
 
     public function getPluginVersion()
     {
-        return '1.2.1';
+        return '1.3.1';
     }
 
     public function getPluginHomepage()

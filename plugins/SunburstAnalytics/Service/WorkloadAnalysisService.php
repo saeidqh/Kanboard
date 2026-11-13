@@ -3,12 +3,54 @@
 namespace Kanboard\Plugin\SunburstAnalytics\Service;
 
 use Kanboard\Core\Base;
+use Kanboard\Plugin\HierarchicalRoles\Helper\HierarchicalRoleHelper;
 
 class WorkloadAnalysisService extends Base
 {
+    /**
+     * User IDs allowed in analytics for current session.
+     * null = full project (Admin or hierarchical Level 1)
+     * int[] = self + subordinates only
+     *
+     * @param int $projectId
+     * @return int[]|null
+     */
+    protected function getScopeUserIds($projectId)
+    {
+        if (!class_exists(HierarchicalRoleHelper::class)) {
+            return null;
+        }
+
+        $helper = new HierarchicalRoleHelper($this->container);
+        return $helper->getAnalyticsVisibleUserIds($projectId);
+    }
+
+    /**
+     * Apply owner_id scope on a PicoDb query.
+     *
+     * @param mixed $query
+     * @param int   $projectId
+     * @return mixed
+     */
+    protected function applyOwnerScope($query, $projectId)
+    {
+        $scopeIds = $this->getScopeUserIds($projectId);
+
+        if ($scopeIds === null) {
+            return $query; // full project
+        }
+
+        if (empty($scopeIds)) {
+            // Force empty result
+            return $query->eq('tasks.owner_id', -1);
+        }
+
+        return $query->in('tasks.owner_id', $scopeIds);
+    }
+
     public function getProjectWorkloadAnalysis($projectId)
     {
-        $tasks = $this->db->table('tasks')
+        $query = $this->db->table('tasks')
             ->columns(
                 'tasks.id',
                 'tasks.title',
@@ -24,57 +66,56 @@ class WorkloadAnalysisService extends Base
             )
             ->join('users', 'id', 'owner_id')
             ->join('columns', 'id', 'column_id')
-            ->eq('tasks.project_id', $projectId)
-            ->findAll();
+            ->eq('tasks.project_id', $projectId);
+
+        // Hierarchy scope: Level 1 / Admin = all; others = self + children only
+        $query = $this->applyOwnerScope($query, $projectId);
+
+        $tasks = $query->findAll();
 
         $totalOpenTasks = 0;
         $userStats = [];
         $currentTime = time();
 
         foreach ($tasks as $task) {
-    $userId = !empty($task['owner_id']) ? (int)$task['owner_id'] : 0;
+            $userId = !empty($task['owner_id']) ? (int) $task['owner_id'] : 0;
 
-    if ($userId === 0) {
-        $userName = 'Unassigned';
-    } else {
-        $userName = !empty($task['assignee_name']) ? $task['assignee_name'] : $task['assignee_username'];
-    }
+            if ($userId === 0) {
+                $userName = 'Unassigned';
+            } else {
+                $userName = !empty($task['assignee_name']) ? $task['assignee_name'] : $task['assignee_username'];
+            }
 
-    if (!isset($userStats[$userId])) {
-        $userStats[$userId] = [
-            'user_id' => $userId,
-            'user_name' => $userName,
-            'open_tasks_count' => 0,
-            'task_percentage' => 0,
-            'is_highest' => false,
-            'columns' => [], // ذخیره ستون‌ها برای نمایش در آکاردئون
-            'delayed_tasks' => []
-        ];
-    }
+            if (!isset($userStats[$userId])) {
+                $userStats[$userId] = [
+                    'user_id' => $userId,
+                    'user_name' => $userName,
+                    'open_tasks_count' => 0,
+                    'task_percentage' => 0,
+                    'is_highest' => false,
+                    'columns' => [],
+                    'delayed_tasks' => [],
+                ];
+            }
 
-    $colTitle = trim($task['column_title'] ?? 'Other');
+            $colTitle = trim($task['column_title'] ?? 'Other');
 
-    // مقداردهی اولیه برای هر ستونِ این کاربر
-    if (!isset($userStats[$userId]['columns'][$colTitle])) {
-        $userStats[$userId]['columns'][$colTitle] = 0;
-    }
+            if (!isset($userStats[$userId]['columns'][$colTitle])) {
+                $userStats[$userId]['columns'][$colTitle] = 0;
+            }
 
-    // اگر تسک غیرفعال/بسته بود (is_active = 0)
-    if ($task['is_active'] != 1) {
-        // شمارش در آکاردئون (مثلاً در ستون Done یا ستون مربوطه)
-        $userStats[$userId]['columns'][$colTitle]++;
-        // خارج شدن از ادامه حلقه تا درصدها، Open Tasks و هشدارهای تاخیر دست‌نخورده بمانند
-        continue;
-    }
+            // Closed / inactive tasks: count in accordion only
+            if ($task['is_active'] != 1) {
+                $userStats[$userId]['columns'][$colTitle]++;
+                continue;
+            }
 
-    // تسک‌های فعال (is_active = 1):
-    $userStats[$userId]['columns'][$colTitle]++;
-    $userStats[$userId]['open_tasks_count']++;
-    $totalOpenTasks++;
+            // Active tasks
+            $userStats[$userId]['columns'][$colTitle]++;
+            $userStats[$userId]['open_tasks_count']++;
+            $totalOpenTasks++;
 
-
-
-            // بررسی تاخیرها در ستون‌های در حال انجام (Work)
+            // Delay checks in working columns
             $colTitleLower = strtolower($colTitle);
             $isWorkingColumn = (strpos($colTitleLower, 'work') !== false || strpos($colTitleLower, 'prog') !== false);
 
@@ -85,8 +126,8 @@ class WorkloadAnalysisService extends Base
                     $reasons[] = t('Overdue by %d day(s)', $delayDays);
                 }
 
-                $timeSpent = (float)$task['time_spent'];
-                $timeEst   = (float)$task['time_estimated'];
+                $timeSpent = (float) $task['time_spent'];
+                $timeEst = (float) $task['time_estimated'];
                 if ($timeEst > 0 && $timeSpent > $timeEst) {
                     $overTime = round($timeSpent - $timeEst, 1);
                     $reasons[] = t('Time spent exceeded estimated by %s hours', $overTime);
@@ -94,15 +135,14 @@ class WorkloadAnalysisService extends Base
 
                 if (!empty($reasons)) {
                     $userStats[$userId]['delayed_tasks'][] = [
-                        'task_id'    => (int)$task['id'],
+                        'task_id' => (int) $task['id'],
                         'task_title' => $task['title'],
-                        'reasons'    => $reasons,
+                        'reasons' => $reasons,
                     ];
                 }
             }
         }
 
-        // محاسبه درصدها و یافتن بیشترین بار کاری
         $maxOpenTasks = 0;
         foreach ($userStats as $userId => $stats) {
             $userStats[$userId]['task_percentage'] = ($totalOpenTasks > 0)
@@ -120,31 +160,26 @@ class WorkloadAnalysisService extends Base
             }
         }
 
-        // مرتب‌سازی بر اساس بیشترین تسک باز
         uasort($userStats, function ($a, $b) {
             return $b['open_tasks_count'] <=> $a['open_tasks_count'];
         });
 
         return [
             'total_open_tasks' => $totalOpenTasks,
-            'users'            => $userStats,
+            'users' => $userStats,
         ];
     }
-        /**
-     * Calculate Team Performance Ranking based on:
-     * - Execution Power (Score / Complexity): 50%
-     * - Timeliness (On-Time Delivery): 30%
-     * - Throughput (Completed Tasks Count): 20%
-     * Plus Active WIP as context.
+
+    /**
+     * Team Performance Ranking (scoped by hierarchy).
      *
-     * @param int $projectId
+     * @param int      $projectId
      * @param int|null $fromTimestamp
      * @param int|null $toTimestamp
      * @return array
      */
     public function getProjectTeamRanking($projectId, $fromTimestamp = null, $toTimestamp = null)
     {
-        // Default range: last 30 days if not set
         if (!$toTimestamp) {
             $toTimestamp = time();
         }
@@ -152,7 +187,9 @@ class WorkloadAnalysisService extends Base
             $fromTimestamp = strtotime('-30 days', $toTimestamp);
         }
 
-        // 1. Fetch Completed Tasks in the date range
+        $scopeIds = $this->getScopeUserIds($projectId);
+
+        // 1. Completed tasks in range
         $completedTasksQuery = $this->db->table('tasks')
             ->columns(
                 'tasks.id',
@@ -166,30 +203,47 @@ class WorkloadAnalysisService extends Base
             )
             ->join('users', 'id', 'owner_id')
             ->eq('tasks.project_id', $projectId)
-            ->neq('tasks.owner_id', 0) // exclude unassigned
+            ->neq('tasks.owner_id', 0)
             ->gte('tasks.date_completed', $fromTimestamp)
             ->lte('tasks.date_completed', $toTimestamp);
 
+        if ($scopeIds !== null) {
+            if (empty($scopeIds)) {
+                $completedTasksQuery->eq('tasks.owner_id', -1);
+            } else {
+                $completedTasksQuery->in('tasks.owner_id', $scopeIds);
+            }
+        }
+
         $completedTasks = $completedTasksQuery->findAll();
 
-        // 2. Fetch Active WIP count for context
+        // 2. Active WIP
         $activeWipQuery = $this->db->table('tasks')
             ->columns('owner_id', 'COUNT(id) as active_count')
             ->eq('project_id', $projectId)
             ->eq('is_active', 1)
             ->neq('owner_id', 0)
-            ->groupBy('owner_id')
-            ->findAll();
+            ->groupBy('owner_id');
 
-        $activeWipMap = [];
-        foreach ($activeWipQuery as $wip) {
-            $activeWipMap[$wip['owner_id']] = (int)$wip['active_count'];
+        if ($scopeIds !== null) {
+            if (empty($scopeIds)) {
+                $activeWipQuery->eq('owner_id', -1);
+            } else {
+                $activeWipQuery->in('owner_id', $scopeIds);
+            }
         }
 
-        // 3. Aggregate stats per user
+        $activeWipRows = $activeWipQuery->findAll();
+
+        $activeWipMap = [];
+        foreach ($activeWipRows as $wip) {
+            $activeWipMap[$wip['owner_id']] = (int) $wip['active_count'];
+        }
+
+        // 3. Aggregate per user
         $rankingData = [];
         foreach ($completedTasks as $task) {
-            $uid = (int)$task['owner_id'];
+            $uid = (int) $task['owner_id'];
             $displayName = !empty($task['assignee_name']) ? $task['assignee_name'] : $task['username'];
 
             if (!isset($rankingData[$uid])) {
@@ -204,20 +258,17 @@ class WorkloadAnalysisService extends Base
             }
 
             $rankingData[$uid]['done_count']++;
-            $rankingData[$uid]['total_score'] += (int)($task['score'] ?? 0);
+            $rankingData[$uid]['total_score'] += (int) ($task['score'] ?? 0);
 
-            // On-time check: date_due exists and completed on or before due date
             if (!empty($task['date_due'])) {
                 if ($task['date_completed'] <= $task['date_due']) {
                     $rankingData[$uid]['on_time_count']++;
                 }
             } else {
-                // If no deadline set, considered completed on time
                 $rankingData[$uid]['on_time_count']++;
             }
         }
 
-        // Add users who have active tasks but no done tasks yet in this range
         foreach ($activeWipMap as $uid => $wipCount) {
             if (!isset($rankingData[$uid])) {
                 $user = $this->db->table('users')->columns('username', 'name')->eq('id', $uid)->findOne();
@@ -243,7 +294,6 @@ class WorkloadAnalysisService extends Base
             ];
         }
 
-        // 4. Find maximum values for normalization (scale 0 - 100)
         $maxScore = 0;
         $maxCount = 0;
         foreach ($rankingData as $item) {
@@ -255,19 +305,16 @@ class WorkloadAnalysisService extends Base
             }
         }
 
-        // 5. Calculate Final Weighted Score (0 to 100)
         foreach ($rankingData as $uid => &$item) {
             $normScore = $maxScore > 0 ? ($item['total_score'] / $maxScore) * 100 : 0;
             $normCount = $maxCount > 0 ? ($item['done_count'] / $maxCount) * 100 : 0;
             $onTimeRate = $item['done_count'] > 0 ? ($item['on_time_count'] / $item['done_count']) * 100 : 0;
 
-            // Weights: 50% Score (Complexity), 30% Timeliness, 20% Count
             $finalScore = (0.50 * $normScore) + (0.30 * $onTimeRate) + (0.20 * $normCount);
 
             $item['on_time_rate'] = round($onTimeRate, 1);
             $item['final_score'] = round($finalScore, 1);
 
-            // Grade Badge
             if ($finalScore >= 85) {
                 $item['grade'] = 'Elite';
                 $item['grade_class'] = 'grade-elite';
@@ -284,12 +331,10 @@ class WorkloadAnalysisService extends Base
         }
         unset($item);
 
-        // 6. Sort descending by final_score
         uasort($rankingData, function ($a, $b) {
             return $b['final_score'] <=> $a['final_score'];
         });
 
-        // Add Rank position (1, 2, 3...)
         $rank = 1;
         foreach ($rankingData as &$item) {
             $item['rank'] = $rank++;
@@ -302,5 +347,4 @@ class WorkloadAnalysisService extends Base
             'to_timestamp' => $toTimestamp,
         ];
     }
-
 }
