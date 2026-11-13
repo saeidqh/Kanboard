@@ -76,10 +76,11 @@ public function initialize()
     );
 
     // لینک Recalculate در منوی پروژه (از مرحله ۳)
-    $this->template->hook->attach(
+   /* $this->template->hook->attach(
         'template:project:dropdown',
         'AutoProgressRollup:project_dropdown'
     );
+    */
 }
 
     /**

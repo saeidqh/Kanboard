@@ -99,6 +99,151 @@ class ColorModel extends Base
             'background' => '#ffe082',
             'border' => '#ffa000',
         ),
+        'indigo' => array(
+            'name' => 'Indigo',
+            'background' => '#c5cae9',
+            'border' => '#3f51b5',
+        ),
+        'deep_purple' => array(
+            'name' => 'Deep Purple',
+            'background' => '#d1c4e9',
+            'border' => '#673ab7',
+        ),
+        'light_blue' => array(
+            'name' => 'Light Blue',
+            'background' => '#b3e5fc',
+            'border' => '#0288d1',
+        ),
+        'light_cyan' => array(
+            'name' => 'Light Cyan',
+            'background' => '#e0f7fa',
+            'border' => '#00acc1',
+        ),
+        'blue_grey' => array(
+            'name' => 'Blue Grey',
+            'background' => '#b0bec5',
+            'border' => '#455a64',
+        ),
+        'warm_grey' => array(
+            'name' => 'Warm Grey',
+            'background' => '#e0e0e0',
+            'border' => '#757575',
+        ),
+        'sand' => array(
+            'name' => 'Sand',
+            'background' => '#f5e6c8',
+            'border' => '#c2a878',
+        ),
+        'peach' => array(
+            'name' => 'Peach',
+            'background' => '#ffe0b2',
+            'border' => '#fb8c00',
+        ),
+        'coral' => array(
+            'name' => 'Coral',
+            'background' => '#ffccbc',
+            'border' => '#ff5722',
+        ),
+        'lavender' => array(
+            'name' => 'Lavender',
+            'background' => '#e1bee7',
+            'border' => '#8e24aa',
+        ),
+        'violet' => array(
+            'name' => 'Violet',
+            'background' => '#d1c4e9',
+            'border' => '#5e35b1',
+        ),
+        'sky' => array(
+            'name' => 'Sky',
+            'background' => '#b3e5fc',
+            'border' => '#039be5',
+        ),
+        'mint' => array(
+            'name' => 'Mint',
+            'background' => '#b2dfdb',
+            'border' => '#00897b',
+        ),
+        'olive' => array(
+            'name' => 'Olive',
+            'background' => '#e6ee9c',
+            'border' => '#9e9d24',
+        ),
+        'gold' => array(
+            'name' => 'Gold',
+            'background' => '#fff59d',
+            'border' => '#fbc02d',
+        ),
+        'bronze' => array(
+            'name' => 'Bronze',
+            'background' => '#d7ccc8',
+            'border' => '#8d6e63',
+        ),
+        'slate' => array(
+            'name' => 'Slate',
+            'background' => '#cfd8dc',
+            'border' => '#546e7a',
+        ),
+        'mauve' => array(
+            'name' => 'Mauve',
+            'background' => '#f3e5f5',
+            'border' => '#ab47bc',
+        ),
+        'apricot' => array(
+            'name' => 'Apricot',
+            'background' => '#ffe0b2',
+            'border' => '#ff9800',
+        ),
+        'seafoam' => array(
+            'name' => 'Seafoam',
+            'background' => '#b2dfdb',
+            'border' => '#26a69a',
+        ),
+        'periwinkle' => array(
+            'name' => 'Periwinkle',
+            'background' => '#c5cae9',
+            'border' => '#5c6bc0',
+        ),
+        'taupe' => array(
+            'name' => 'Taupe',
+            'background' => '#d7ccc8',
+            'border' => '#6d4c41',
+        ),
+        'champagne' => array(
+            'name' => 'Champagne',
+            'background' => '#fff8e1',
+            'border' => '#ffb300',
+        ),
+        'lilac' => array(
+            'name' => 'Lilac',
+            'background' => '#e1bee7',
+            'border' => '#9c27b0',
+        ),
+        'aqua' => array(
+            'name' => 'Aqua',
+            'background' => '#b2ebf2',
+            'border' => '#00acc1',
+        ),
+        'mustard' => array(
+            'name' => 'Mustard',
+            'background' => '#fff59d',
+            'border' => '#f9a825',
+        ),
+        'plum' => array(
+            'name' => 'Plum',
+            'background' => '#e1bee7',
+            'border' => '#7b1fa2',
+        ),
+        'steel' => array(
+            'name' => 'Steel',
+            'background' => '#cfd8dc',
+            'border' => '#37474f',
+        ),
+        'ivory' => array(
+            'name' => 'Ivory',
+            'background' => '#fafafa',
+            'border' => '#bdbdbd',
+        ),
     );
 
     /**
