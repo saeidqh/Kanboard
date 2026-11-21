@@ -213,4 +213,66 @@ class HierarchicalRoleHelper extends Base
 
         return $list;
     }
+
+    /**
+     * Whether current user sees ALL tasks on the board (no row filter).
+     * Admin or hierarchical Level 1.
+     */
+    public function seesFullBoard($projectId)
+    {
+        return $this->seesFullProjectAnalytics($projectId);
+    }
+
+    /**
+     * Apply board/list visibility on a PicoDb task query (by reference).
+     *
+     * Rules for restricted users:
+     *   - tasks they CREATED (creator_id = me)  → can track stage & progress
+     *   - tasks ASSIGNED to them (owner_id = me)
+     *   - tasks ASSIGNED to subordinates (owner_id in subtree)
+     *
+     * Admin / Level 1: no extra WHERE (full board).
+     *
+     * @param \PicoDb\Table $query
+     * @param int|null      $projectId  optional; if null, tries not to over-filter cross-project
+     */
+    public function applyBoardVisibilityToQuery($query, $projectId = null)
+    {
+        if ($this->userSession->isAdmin()) {
+            return;
+        }
+
+        $userId = (int) $this->userSession->getId();
+        if ($userId <= 0) {
+            $query->eq(\Kanboard\Model\TaskModel::TABLE.'.id', -1);
+            return;
+        }
+
+        // Level 1 with a known project → full board for that project context
+        if ($projectId !== null && $this->seesFullBoard($projectId)) {
+            return;
+        }
+
+        // Restricted: creator OR assignee in (self + subordinates)
+        // Subordinates only resolvable when projectId known
+        $assigneeIds = array($userId);
+
+        if ($projectId !== null) {
+            $visible = $this->getAnalyticsVisibleUserIds($projectId);
+            if ($visible === null) {
+                return; // full
+            }
+            $assigneeIds = $visible;
+            if (empty($assigneeIds)) {
+                $assigneeIds = array($userId);
+            }
+        }
+
+        $t = \Kanboard\Model\TaskModel::TABLE;
+        $query->beginOr();
+        $query->eq($t.'.creator_id', $userId);
+        $query->in($t.'.owner_id', $assigneeIds);
+        $query->closeOr();
+    }
+
 }

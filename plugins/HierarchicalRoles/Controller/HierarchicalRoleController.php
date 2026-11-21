@@ -208,9 +208,10 @@ class HierarchicalRoleController extends BaseController
             $assignmentMap[(int) $a['user_id']] = (int) $a['role_id'];
         }
 
-        // Project members – getAllUsers often returns [user_id => role_name]
-        // so we normalize to a list of user arrays with id, name, username
-        $rawUsers = $this->projectUserRoleModel->getAllUsers($project['id']);
+        // Full project members for role assignment (NOT hierarchy-filtered).
+        // Use core ProjectUserRoleModel so Filtered override cannot shrink this list.
+        $coreUserRoleModel = new \Kanboard\Model\ProjectUserRoleModel($this->container);
+        $rawUsers = $coreUserRoleModel->getAllUsers($project['id']);
         $projectUsers = array();
 
         if (!empty($rawUsers)) {

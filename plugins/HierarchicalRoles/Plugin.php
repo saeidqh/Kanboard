@@ -4,6 +4,8 @@ namespace Kanboard\Plugin\HierarchicalRoles;
 
 use Kanboard\Core\Plugin\Base;
 use Kanboard\Core\Translator;
+use Kanboard\Model\TaskModel;
+use Kanboard\Plugin\HierarchicalRoles\Helper\HierarchicalRoleHelper;
 
 class Plugin extends Base
 {
@@ -12,17 +14,16 @@ class Plugin extends Base
         // Register helper
         $this->helper->register('hierarchicalRoleHelper', '\Kanboard\Plugin\HierarchicalRoles\Helper\HierarchicalRoleHelper');
 
-        // Override core model so getAssignableUsers() is filtered
-        // (Kanboard core has NO hook inside getAssignableUsers)
+        // Override core model: assignable users + project user lists (search filters)
         $this->container['projectUserRoleModel'] = $this->container->factory(function ($c) {
             return new \Kanboard\Plugin\HierarchicalRoles\Model\FilteredProjectUserRoleModel($c);
         });
 
-        // Override core templates to enforce module access + keep core UI
+        // Template overrides: module access
         $this->template->setTemplateOverride('project_header/dropdown', 'HierarchicalRoles:project_header/dropdown');
         $this->template->setTemplateOverride('analytic/layout', 'HierarchicalRoles:analytic/layout');
 
-        // Scope core analytics (user / task distribution) by hierarchy
+        // Scope core analytics
         $this->container['userDistributionAnalytic'] = $this->container->factory(function ($c) {
             return new \Kanboard\Plugin\HierarchicalRoles\Analytic\ScopedUserDistributionAnalytic($c);
         });
@@ -30,8 +31,26 @@ class Plugin extends Base
             return new \Kanboard\Plugin\HierarchicalRoles\Analytic\ScopedTaskDistributionAnalytic($c);
         });
 
+        // ---- Board / list / dashboard visibility ----
+        // Official Kanboard reference hook: alters query before board is rendered
+        $container = $this->container;
+        $this->hook->on('formatter:board:query', function (\PicoDb\Table &$query) use ($container) {
+            $helper = new HierarchicalRoleHelper($container);
+            // project_id is usually already constrained on the query; extract if possible
+            $projectId = null;
+            // Best-effort: from request when on board
+            if (isset($container['request'])) {
+                $projectId = (int) $container['request']->getIntegerParam('project_id', 0) ?: null;
+            }
+            $helper->applyBoardVisibilityToQuery($query, $projectId);
+        });
 
-        // Project menu entry (only visible if user has module access)
+        $this->hook->on('pagination:dashboard:task:query', function (\PicoDb\Table &$query) use ($container) {
+            $helper = new HierarchicalRoleHelper($container);
+            $helper->applyBoardVisibilityToQuery($query, null);
+        });
+
+        // Project menu entry
         $this->template->hook->attach('template:project:dropdown', 'HierarchicalRoles:project/dropdown');
         $this->template->hook->attach('template:project-header:view-switcher', 'HierarchicalRoles:project/header');
         $this->template->hook->attach('template:project:sidebar', 'HierarchicalRoles:project/sidebar');
@@ -49,7 +68,7 @@ class Plugin extends Base
 
     public function getPluginDescription()
     {
-        return 'Organizational hierarchy for task assignment. Users can only assign tasks to their subordinates. Role-based access to the management module.';
+        return 'Organizational hierarchy for task assignment, board visibility, module access and analytics scope.';
     }
 
     public function getPluginAuthor()
@@ -59,7 +78,7 @@ class Plugin extends Base
 
     public function getPluginVersion()
     {
-        return '1.3.1';
+        return '1.4.1';
     }
 
     public function getPluginHomepage()

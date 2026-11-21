@@ -1,0 +1,56 @@
+/* WrikeTheme Task Layout Manager */
+.wrike-layout-open {
+    display:inline-flex; align-items:center; gap:8px; margin:0 0 14px;
+    padding:8px 13px; border:1px solid #cfd8e6; border-radius:8px;
+    background:#fff; color:#293d52; font-weight:650; cursor:pointer;
+}
+.wrike-layout-open:hover { background:#eff5ff; border-color:#8eb8f4; }
+.wrike-layout-manager {
+    margin:0 0 16px; padding:14px; border:1px solid #d8deea;
+    border-radius:12px; background:#f8faff; color:#293d52;
+}
+.wrike-layout-open[hidden] { display:none !important; }
+.wrike-layout-toolbar { display:none; }
+.wrike-layout-manager.is-editing .wrike-layout-toolbar { display:flex; }
+.wrike-layout-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:13px; }
+.wrike-layout-toolbar strong, .wrike-layout-zone-heading strong { display:block; font-size:14px; }
+.wrike-layout-toolbar small, .wrike-layout-zone-heading small { display:block; margin-top:3px; color:#718096; font-size:11px; }
+.wrike-layout-toolbar-actions { display:flex; gap:7px; flex-wrap:wrap; }
+.wrike-layout-toolbar button {
+    padding:7px 10px; border:1px solid #d1d9e6; border-radius:7px;
+    background:#fff; color:#34445b; cursor:pointer; font-size:12px;
+}
+.wrike-layout-toolbar .wrike-layout-done { background:#3157c8; border-color:#3157c8; color:#fff; }
+.wrike-layout-zones { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; }
+.wrike-layout-zone { min-width:0; padding:11px; border:1px dashed #bdc9dc; border-radius:9px; background:#fff; }
+.wrike-layout-zone-top { grid-column:1 / -1; }
+.wrike-layout-zone-heading { padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #e8edf5; }
+.wrike-layout-zone-items { min-height:46px; display:flex; flex-direction:column; gap:7px; }
+.wrike-layout-field { position:relative; min-width:0; padding:8px 9px 8px 34px !important; margin:0 0 8px !important; border:1px solid #e0e6ef; border-radius:8px; background:#fff; }
+.wrike-layout-field label { display:block; }
+.wrike-layout-field input:not([type=checkbox]):not([type=radio]),
+.wrike-layout-field select, .wrike-layout-field textarea { max-width:100% !important; width:100% !important; box-sizing:border-box; }
+.wrike-layout-drag-handle {
+    position:absolute; left:7px; top:8px; width:23px; height:27px;
+    padding:0; border:1px solid #dce3ee; border-radius:5px;
+    background:#f3f6fb; color:#52647c; cursor:grab; font-size:18px; line-height:1;
+}
+.wrike-layout-manager.is-editing .wrike-layout-drag-handle { cursor:grab; }
+.wrike-layout-manager.is-editing .wrike-layout-field { border-style:dashed; }
+.wrike-layout-field.is-dragging { opacity:.45; }
+.wrike-layout-zone.is-drop-target { border-color:#3157c8; background:#f0f5ff; }
+.wrike-layout-manager:not(.is-editing) .wrike-layout-drag-handle { display:none; }
+body.night-mode .wrike-layout-open,
+body.night-mode .wrike-layout-manager,
+body.night-mode .wrike-layout-zone,
+body.night-mode .wrike-layout-field,
+body.night-mode .wrike-layout-toolbar button { background:#202c42; color:#e2e8f0; border-color:#3b4b65; }
+body.night-mode .wrike-layout-toolbar small,
+body.night-mode .wrike-layout-zone-heading small { color:#aab7ca; }
+@media (max-width:700px) {
+    .wrike-layout-zones { grid-template-columns:1fr; }
+    .wrike-layout-zone-top { grid-column:auto; }
+    .wrike-layout-toolbar { align-items:flex-start; flex-direction:column; }
+}
+
+.task-form-container > .wrike-layout-empty-column { display:none !important; }

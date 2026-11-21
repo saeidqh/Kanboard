@@ -1,0 +1,26 @@
+label[for="form-score"],
+#form-score,
+input[name="score"],
+label[for="form-color_id"],
+#form-color_id,
+select[name="color_id"],
+select[name="color_id"] + .select2,
+select#form-color_id + span.select2 {
+    display: none !important;
+}
+
+.ahvaz-field-hidden {
+    display: none !important;
+}
+
+.ahvaz-error-msg {
+    color: #c00 !important;
+    font-size: 12px;
+}
+
+input.form-error,
+select.form-error,
+textarea.form-error {
+    border-color: #c00 !important;
+    background: #fff5f5 !important;
+}

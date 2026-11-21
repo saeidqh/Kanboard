@@ -1,0 +1,273 @@
+/* Request Plugin styles */
+
+.req-tabs { margin: 12px 0 20px; }
+.req-tab-list {
+    list-style: none;
+    display: flex;
+    gap: 4px;
+    padding: 0;
+    margin: 0;
+    border-bottom: 2px solid #e6e9ef;
+}
+.req-tab-list li { margin: 0; }
+.req-tab-list li a {
+    display: block;
+    padding: 10px 18px;
+    color: #676879;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+.req-tab-list li.active a,
+.req-tab-list li a:hover {
+    color: #0073ea;
+    border-bottom-color: #0073ea;
+}
+
+.req-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+.req-badge-task {
+    background: #dcf0ff;
+    color: #0073ea;
+}
+
+.req-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 650;
+    background: #eef1f6;
+    color: #3d4f6a;
+}
+.req-status-submitted { background: #e8f0fe; color: #1a56db; }
+.req-status-accepted { background: #def7ec; color: #03543f; }
+.req-status-rejected { background: #fde8e8; color: #9b1c1c; }
+.req-status-forwarded { background: #fef3c7; color: #92400e; }
+.req-status-in_progress { background: #e0e7ff; color: #3730a3; }
+.req-status-completed { background: #d1fae5; color: #065f46; }
+.req-status-under_review { background: #f3e8ff; color: #6b21a8; }
+
+.req-form .form-columns {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+.req-form .form-column {
+    flex: 1 1 280px;
+    min-width: 260px;
+}
+.req-form select,
+.req-form input[type="text"],
+.req-form textarea {
+    width: 100%;
+    max-width: 100%;
+}
+
+.req-show-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+.req-show-main { flex: 1 1 58%; min-width: 300px; }
+.req-show-side { flex: 1 1 280px; max-width: 360px; }
+
+.req-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    margin-bottom: 14px;
+    align-items: center;
+}
+.req-meta-item { font-size: 13px; color: #4b5870; }
+.req-people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: #f5f6f8;
+    border-radius: 8px;
+    font-size: 13.5px;
+}
+
+.req-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.req-inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.req-inline-form .form-input-small,
+.req-inline-form select,
+.req-inline-form input[type="text"] {
+    min-width: 160px;
+    flex: 1 1 160px;
+}
+
+.req-comments { list-style: none; padding: 0; margin: 0 0 16px; }
+.req-comments li {
+    padding: 12px 0;
+    border-bottom: 1px solid #e6e9ef;
+}
+.req-comment-head {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+.req-comment-body { font-size: 14px; line-height: 1.45; color: #323338; }
+.req-comment-form textarea { width: 100%; }
+
+.req-timeline { list-style: none; padding: 0; margin: 0; }
+.req-timeline-item {
+    position: relative;
+    padding: 0 0 16px 16px;
+    border-left: 2px solid #e6e9ef;
+    margin-left: 6px;
+}
+.req-timeline-item:last-child { border-left-color: transparent; }
+.req-timeline-item:before {
+    content: "";
+    position: absolute;
+    left: -6px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #0073ea;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #c5d0e6;
+}
+.req-timeline-action {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+}
+.req-timeline-who { font-size: 12.5px; color: #676879; margin-top: 2px; }
+.req-timeline-note {
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: #4b5870;
+    background: #f5f6f8;
+    padding: 6px 8px;
+    border-radius: 6px;
+}
+
+.req-ref {
+    display: inline-block;
+    font-size: 0.75em;
+    color: #676879;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+    .req-show-side { max-width: none; }
+}
+
+/* ===== Modal form ===== */
+.req-modal {
+    padding: 8px 4px 4px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+.req-modal-header {
+    margin-bottom: 18px;
+    text-align: left;
+}
+.req-modal-header h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    font-weight: 750;
+    color: #1c1814;
+}
+.req-modal-sub {
+    margin: 0;
+    color: #7a6f63;
+    font-size: 13.5px;
+}
+.req-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+}
+.req-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.req-field-full {
+    grid-column: 1 / -1;
+}
+.req-field label {
+    font-size: 13px;
+    font-weight: 650;
+    color: #4b5870;
+}
+.req-required { color: #e44258; }
+.req-field input[type="text"],
+.req-field input[type="date"],
+.req-field select,
+.req-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid #e0d8ce;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: #fff;
+    color: #1c1814;
+    transition: border-color .15s, box-shadow .15s;
+}
+.req-field input:focus,
+.req-field select:focus,
+.req-field textarea:focus {
+    outline: 0;
+    border-color: #e8a317;
+    box-shadow: 0 0 0 3px rgba(232, 163, 23, 0.18);
+}
+.req-field textarea { resize: vertical; min-height: 90px; }
+.req-hint {
+    font-size: 12px;
+    color: #9a8e80;
+}
+.req-error {
+    font-size: 12px;
+    color: #e44258;
+}
+.req-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #eee6dc;
+}
+.req-btn-submit {
+    min-width: 150px;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+}
+.req-btn-cancel {
+    border-radius: 10px !important;
+    background: #f5f0e8 !important;
+    color: #5c5248 !important;
+    border: 1px solid #e0d8ce !important;
+}
+@media (max-width: 640px) {
+    .req-form-grid { grid-template-columns: 1fr; }
+}

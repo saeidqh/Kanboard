@@ -1,0 +1,99 @@
+/* Native activity as right sidebar on task page */
+@media (min-width: 1200px) {
+    body.page-task-show .sidebar-content,
+    body.tt-has-timeline .sidebar-content {
+        padding-right: 340px !important;
+        box-sizing: border-box;
+    }
+    .tas-rail {
+        position: fixed;
+        top: 64px;
+        right: 12px;
+        width: 320px;
+        max-height: calc(100vh - 80px);
+        z-index: 20;
+    }
+}
+
+.tas-rail-inner {
+    background: #fff;
+    border: 1px solid #e6eaf0;
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+    max-height: inherit;
+    overflow: auto;
+    padding: 12px 14px 16px;
+}
+
+body.night-mode .tas-rail-inner,
+body.dark .tas-rail-inner {
+    background: #1e2430;
+    border-color: #2c3545;
+    color: #e8eef7;
+}
+
+.tas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.tas-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 750;
+}
+.tas-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4f46e5;
+    text-decoration: none;
+}
+.tas-link:hover { text-decoration: underline; }
+
+.tas-empty {
+    margin: 6px 0;
+    font-size: 12.5px;
+    color: #667085;
+}
+
+.tas-list { display: flex; flex-direction: column; gap: 12px; }
+
+.tas-item {
+    border-left: 3px solid #c7d2fe;
+    padding: 4px 0 4px 10px;
+}
+.tas-when {
+    font-size: 11px;
+    color: #667085;
+    font-variant-numeric: tabular-nums;
+}
+.tas-author {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    margin-top: 1px;
+}
+.tas-event {
+    font-size: 12.5px;
+    color: #0f172a;
+    line-height: 1.4;
+    margin-top: 2px;
+    word-break: break-word;
+}
+.tas-event p { margin: 0 0 4px; }
+
+body.night-mode .tas-author,
+body.dark .tas-author { color: #e2e8f0; }
+body.night-mode .tas-event,
+body.dark .tas-event { color: #f1f5f9; }
+
+@media (max-width: 1199px) {
+    .tas-rail {
+        position: static;
+        width: 100%;
+        margin: 16px 0 24px;
+        max-height: none;
+    }
+}
